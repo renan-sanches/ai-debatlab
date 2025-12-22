@@ -5,7 +5,7 @@
 import { Router, Request, Response } from "express";
 import { streamLLMResponse } from "./llmStreaming";
 import * as db from "./db";
-import { sdk } from "./_core/sdk";
+import { authenticateRequest } from "./supabase";
 import {
   prepareDebatePrompt,
   getUserApiKeyForModel,
@@ -22,14 +22,8 @@ router.get("/api/stream/debate/:debateId/response", async (req: Request, res: Re
   const responseOrder = parseInt(req.query.responseOrder as string);
   const useUserApiKey = req.query.useUserApiKey === "true";
 
-  // Verify authentication
-  let user;
-  try {
-    user = await sdk.authenticateRequest(req);
-  } catch {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
+  // Authenticate using Supabase (handles dev mode internally)
+  const user = await authenticateRequest(req);
   
   if (!user) {
     res.status(401).json({ error: "Unauthorized" });

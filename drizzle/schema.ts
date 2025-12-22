@@ -1,18 +1,27 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, boolean, json } from "drizzle-orm/mysql-core";
+import { serial, pgEnum, pgTable, text, timestamp, varchar, boolean, json, integer } from "drizzle-orm/pg-core";
+
+/**
+ * Enums for PostgreSQL
+ */
+export const roleEnum = pgEnum("role", ["user", "admin"]);
+export const debateStatusEnum = pgEnum("debate_status", ["active", "completed", "archived"]);
+export const roundStatusEnum = pgEnum("round_status", ["in_progress", "awaiting_moderator", "completed"]);
+export const providerEnum = pgEnum("provider", ["openrouter", "anthropic", "openai", "google"]);
 
 /**
  * Core user table backing auth flow.
+ * Note: Uses Supabase Auth user ID as the primary identifier
  */
-export const users = mysqlTable("users", {
-  id: int("id").autoincrement().primaryKey(),
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  supabaseId: varchar("supabase_id", { length: 64 }).notNull().unique(), // Supabase Auth user ID
   name: text("name"),
   email: varchar("email", { length: 320 }),
-  loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+  loginMethod: varchar("login_method", { length: 64 }),
+  role: roleEnum("role").default("user").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  lastSignedIn: timestamp("last_signed_in").defaultNow().notNull(),
 });
 
 export type User = typeof users.$inferSelect;
@@ -21,22 +30,22 @@ export type InsertUser = typeof users.$inferInsert;
 /**
  * Debates table - stores the main debate configuration and metadata
  */
-export const debates = mysqlTable("debates", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
+export const debates = pgTable("debates", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
   question: text("question").notNull(),
-  participantModels: json("participantModels").$type<string[]>().notNull(),
-  moderatorModel: varchar("moderatorModel", { length: 64 }).notNull(),
-  devilsAdvocateEnabled: boolean("devilsAdvocateEnabled").default(false).notNull(),
-  devilsAdvocateModel: varchar("devilsAdvocateModel", { length: 64 }),
-  votingEnabled: boolean("votingEnabled").default(false).notNull(),
-  status: mysqlEnum("status", ["active", "completed", "archived"]).default("active").notNull(),
+  participantModels: json("participant_models").$type<string[]>().notNull(),
+  moderatorModel: varchar("moderator_model", { length: 64 }).notNull(),
+  devilsAdvocateEnabled: boolean("devils_advocate_enabled").default(false).notNull(),
+  devilsAdvocateModel: varchar("devils_advocate_model", { length: 64 }),
+  votingEnabled: boolean("voting_enabled").default(false).notNull(),
+  status: debateStatusEnum("status").default("active").notNull(),
   title: varchar("title", { length: 255 }),
   tags: json("tags").$type<string[]>().default([]),
-  imageUrl: text("imageUrl"),
-  pdfUrl: text("pdfUrl"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  imageUrl: text("image_url"),
+  pdfUrl: text("pdf_url"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Debate = typeof debates.$inferSelect;
@@ -45,15 +54,15 @@ export type InsertDebate = typeof debates.$inferInsert;
 /**
  * Rounds table - stores each round of the debate
  */
-export const rounds = mysqlTable("rounds", {
-  id: int("id").autoincrement().primaryKey(),
-  debateId: int("debateId").notNull(),
-  roundNumber: int("roundNumber").notNull(),
-  followUpQuestion: text("followUpQuestion"),
-  moderatorSynthesis: text("moderatorSynthesis"),
-  suggestedFollowUp: text("suggestedFollowUp"),
-  status: mysqlEnum("status", ["in_progress", "awaiting_moderator", "completed"]).default("in_progress").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+export const rounds = pgTable("rounds", {
+  id: serial("id").primaryKey(),
+  debateId: integer("debate_id").notNull(),
+  roundNumber: integer("round_number").notNull(),
+  followUpQuestion: text("follow_up_question"),
+  moderatorSynthesis: text("moderator_synthesis"),
+  suggestedFollowUp: text("suggested_follow_up"),
+  status: roundStatusEnum("status").default("in_progress").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export type Round = typeof rounds.$inferSelect;
@@ -62,16 +71,16 @@ export type InsertRound = typeof rounds.$inferInsert;
 /**
  * Responses table - stores individual AI responses
  */
-export const responses = mysqlTable("responses", {
-  id: int("id").autoincrement().primaryKey(),
-  roundId: int("roundId").notNull(),
-  debateId: int("debateId").notNull(),
-  modelId: varchar("modelId", { length: 64 }).notNull(),
-  modelName: varchar("modelName", { length: 128 }).notNull(),
+export const responses = pgTable("responses", {
+  id: serial("id").primaryKey(),
+  roundId: integer("round_id").notNull(),
+  debateId: integer("debate_id").notNull(),
+  modelId: varchar("model_id", { length: 64 }).notNull(),
+  modelName: varchar("model_name", { length: 128 }).notNull(),
   content: text("content").notNull(),
-  isDevilsAdvocate: boolean("isDevilsAdvocate").default(false).notNull(),
-  responseOrder: int("responseOrder").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  isDevilsAdvocate: boolean("is_devils_advocate").default(false).notNull(),
+  responseOrder: integer("response_order").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export type Response = typeof responses.$inferSelect;
@@ -80,13 +89,13 @@ export type InsertResponse = typeof responses.$inferInsert;
 /**
  * Votes table - stores voting results when voting is enabled
  */
-export const votes = mysqlTable("votes", {
-  id: int("id").autoincrement().primaryKey(),
-  roundId: int("roundId").notNull(),
-  voterModelId: varchar("voterModelId", { length: 64 }).notNull(),
-  votedForModelId: varchar("votedForModelId", { length: 64 }).notNull(),
+export const votes = pgTable("votes", {
+  id: serial("id").primaryKey(),
+  roundId: integer("round_id").notNull(),
+  voterModelId: varchar("voter_model_id", { length: 64 }).notNull(),
+  votedForModelId: varchar("voted_for_model_id", { length: 64 }).notNull(),
   reason: text("reason"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export type Vote = typeof votes.$inferSelect;
@@ -95,14 +104,14 @@ export type InsertVote = typeof votes.$inferInsert;
 /**
  * User API Keys table - stores user-provided API keys for different providers
  */
-export const userApiKeys = mysqlTable("userApiKeys", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
-  provider: mysqlEnum("provider", ["openrouter", "anthropic", "openai", "google"]).notNull(),
-  apiKey: text("apiKey").notNull(), // Encrypted in application layer
-  isActive: boolean("isActive").default(true).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+export const userApiKeys = pgTable("user_api_keys", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  provider: providerEnum("provider").notNull(),
+  apiKey: text("api_key").notNull(), // Encrypted in application layer
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type UserApiKey = typeof userApiKeys.$inferSelect;
@@ -111,30 +120,30 @@ export type InsertUserApiKey = typeof userApiKeys.$inferInsert;
 /**
  * Debate Results table - stores final results and points after debate ends
  */
-export const debateResults = mysqlTable("debateResults", {
-  id: int("id").autoincrement().primaryKey(),
-  debateId: int("debateId").notNull().unique(),
-  userId: int("userId").notNull(),
+export const debateResults = pgTable("debate_results", {
+  id: serial("id").primaryKey(),
+  debateId: integer("debate_id").notNull().unique(),
+  userId: integer("user_id").notNull(),
   
   // Final assessment from moderator
-  finalAssessment: text("finalAssessment"),
+  finalAssessment: text("final_assessment"),
   synthesis: text("synthesis"),
   
   // Winner information
-  moderatorTopPick: varchar("moderatorTopPick", { length: 64 }),
-  moderatorReasoning: text("moderatorReasoning"),
+  moderatorTopPick: varchar("moderator_top_pick", { length: 64 }),
+  moderatorReasoning: text("moderator_reasoning"),
   
   // Voting results: { modelId: voteCount }
-  peerVotes: json("peerVotes").$type<Record<string, number>>().default({}),
+  peerVotes: json("peer_votes").$type<Record<string, number>>().default({}),
   
   // Models mentioned in strongest arguments
-  strongestArguments: json("strongestArguments").$type<string[]>().default([]),
+  strongestArguments: json("strongest_arguments").$type<string[]>().default([]),
   
   // Devil's advocate success (if applicable)
-  devilsAdvocateSuccess: boolean("devilsAdvocateSuccess").default(false),
+  devilsAdvocateSuccess: boolean("devils_advocate_success").default(false),
   
   // Points awarded: { modelId: { total, breakdown } }
-  pointsAwarded: json("pointsAwarded").$type<Record<string, {
+  pointsAwarded: json("points_awarded").$type<Record<string, {
     total: number;
     moderatorPick: number;
     peerVotes: number;
@@ -143,10 +152,10 @@ export const debateResults = mysqlTable("debateResults", {
   }>>().default({}),
   
   // Metadata
-  roundCount: int("roundCount").default(1).notNull(),
-  topicTags: json("topicTags").$type<string[]>().default([]),
+  roundCount: integer("round_count").default(1).notNull(),
+  topicTags: json("topic_tags").$type<string[]>().default([]),
   
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export type DebateResult = typeof debateResults.$inferSelect;
@@ -155,23 +164,23 @@ export type InsertDebateResult = typeof debateResults.$inferInsert;
 /**
  * Model Stats table - aggregated stats for leaderboard
  */
-export const modelStats = mysqlTable("modelStats", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
-  modelId: varchar("modelId", { length: 64 }).notNull(),
+export const modelStats = pgTable("model_stats", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  modelId: varchar("model_id", { length: 64 }).notNull(),
   
   // Aggregate stats
-  totalPoints: int("totalPoints").default(0).notNull(),
-  totalDebates: int("totalDebates").default(0).notNull(),
-  moderatorPicks: int("moderatorPicks").default(0).notNull(),
-  totalPeerVotes: int("totalPeerVotes").default(0).notNull(),
-  strongArgumentMentions: int("strongArgumentMentions").default(0).notNull(),
-  devilsAdvocateWins: int("devilsAdvocateWins").default(0).notNull(),
+  totalPoints: integer("total_points").default(0).notNull(),
+  totalDebates: integer("total_debates").default(0).notNull(),
+  moderatorPicks: integer("moderator_picks").default(0).notNull(),
+  totalPeerVotes: integer("total_peer_votes").default(0).notNull(),
+  strongArgumentMentions: integer("strong_argument_mentions").default(0).notNull(),
+  devilsAdvocateWins: integer("devils_advocate_wins").default(0).notNull(),
   
   // Recent form (points in last 3 debates)
-  recentPoints: int("recentPoints").default(0).notNull(),
+  recentPoints: integer("recent_points").default(0).notNull(),
   
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type ModelStat = typeof modelStats.$inferSelect;
@@ -180,12 +189,12 @@ export type InsertModelStat = typeof modelStats.$inferInsert;
 /**
  * User Favorite Models table - stores user's favorite models for quick selection
  */
-export const userFavoriteModels = mysqlTable("userFavoriteModels", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("userId").notNull(),
-  openRouterId: varchar("openRouterId", { length: 128 }).notNull(),
-  modelName: varchar("modelName", { length: 256 }).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+export const userFavoriteModels = pgTable("user_favorite_models", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  openRouterId: varchar("open_router_id", { length: 128 }).notNull(),
+  modelName: varchar("model_name", { length: 256 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export type UserFavoriteModel = typeof userFavoriteModels.$inferSelect;

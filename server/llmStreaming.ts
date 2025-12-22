@@ -363,9 +363,27 @@ export async function streamLLMResponse(
       }
     }
 
-    // Default: use Manus Forge API
+    // Default: prefer OpenRouter direct if configured (faster, no proxy)
+    const openRouterKey = process.env.OPENROUTER_API_KEY;
+    if (openRouterKey) {
+      await streamOpenAICompatible(
+        PROVIDER_ENDPOINTS.openrouter,
+        openRouterKey,
+        model.openRouterId,
+        params.messages,
+        maxTokens,
+        callbacks,
+        {
+          "HTTP-Referer": "https://ai-debatelab.app",
+          "X-Title": "AI DebateLab",
+        }
+      );
+      return;
+    }
+    
+    // Fall back to Manus Forge API
     if (!ENV.forgeApiKey) {
-      callbacks.onError(new Error("API key is not configured"));
+      callbacks.onError(new Error("No API key configured. Set OPENROUTER_API_KEY or BUILT_IN_FORGE_API_KEY in your environment."));
       return;
     }
 

@@ -1,15 +1,18 @@
 import { eq, desc, and, sql, gte } from "drizzle-orm";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import { InsertUser, users, debates, rounds, responses, votes, userApiKeys, debateResults, modelStats, userFavoriteModels, InsertDebate, InsertRound, InsertResponse, InsertVote, InsertUserApiKey, InsertDebateResult, InsertModelStat, InsertUserFavoriteModel } from "../drizzle/schema";
-import { ENV } from './_core/env';
 import { encrypt, decrypt, isEncrypted } from './encryption';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _client: ReturnType<typeof postgres> | null = null;
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      _client = postgres(process.env.DATABASE_URL);
+      _db = drizzle(_client);
+      console.log("[Database] Connected to PostgreSQL");
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
@@ -18,10 +21,10 @@ export async function getDb() {
   return _db;
 }
 
-// User functions
+// User functions - now using supabaseId instead of openId
 export async function upsertUser(user: InsertUser): Promise<void> {
-  if (!user.openId) {
-    throw new Error("User openId is required for upsert");
+  if (!user.supabaseId) {
+    throw new Error("User supabaseId is required for upsert");
   }
 
   const db = await getDb();
@@ -31,61 +34,52 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
 
   try {
-    const values: InsertUser = {
-      openId: user.openId,
-    };
-    const updateSet: Record<string, unknown> = {};
+    // Check if user exists
+    const existing = await db.select()
+      .from(users)
+      .where(eq(users.supabaseId, user.supabaseId))
+      .limit(1);
 
-    const textFields = ["name", "email", "loginMethod"] as const;
-    type TextField = (typeof textFields)[number];
+    if (existing.length > 0) {
+      // Update existing user
+      const updateSet: Partial<InsertUser> = {
+        updatedAt: new Date(),
+        lastSignedIn: user.lastSignedIn || new Date(),
+      };
+      
+      if (user.name !== undefined) updateSet.name = user.name;
+      if (user.email !== undefined) updateSet.email = user.email;
+      if (user.loginMethod !== undefined) updateSet.loginMethod = user.loginMethod;
+      if (user.role !== undefined) updateSet.role = user.role;
 
-    const assignNullable = (field: TextField) => {
-      const value = user[field];
-      if (value === undefined) return;
-      const normalized = value ?? null;
-      values[field] = normalized;
-      updateSet[field] = normalized;
-    };
-
-    textFields.forEach(assignNullable);
-
-    if (user.lastSignedIn !== undefined) {
-      values.lastSignedIn = user.lastSignedIn;
-      updateSet.lastSignedIn = user.lastSignedIn;
+      await db.update(users)
+        .set(updateSet)
+        .where(eq(users.supabaseId, user.supabaseId));
+    } else {
+      // Insert new user
+      await db.insert(users).values({
+        supabaseId: user.supabaseId,
+        name: user.name,
+        email: user.email,
+        loginMethod: user.loginMethod,
+        role: user.role || "user",
+        lastSignedIn: user.lastSignedIn || new Date(),
+      });
     }
-    if (user.role !== undefined) {
-      values.role = user.role;
-      updateSet.role = user.role;
-    } else if (user.openId === ENV.ownerOpenId) {
-      values.role = 'admin';
-      updateSet.role = 'admin';
-    }
-
-    if (!values.lastSignedIn) {
-      values.lastSignedIn = new Date();
-    }
-
-    if (Object.keys(updateSet).length === 0) {
-      updateSet.lastSignedIn = new Date();
-    }
-
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
-      set: updateSet,
-    });
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
     throw error;
   }
 }
 
-export async function getUserByOpenId(openId: string) {
+export async function getUserBySupabaseId(supabaseId: string) {
   const db = await getDb();
   if (!db) {
     console.warn("[Database] Cannot get user: database not available");
     return undefined;
   }
 
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  const result = await db.select().from(users).where(eq(users.supabaseId, supabaseId)).limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
 
@@ -94,8 +88,8 @@ export async function createDebate(debate: InsertDebate) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.insert(debates).values(debate);
-  return result[0].insertId;
+  const result = await db.insert(debates).values(debate).returning({ id: debates.id });
+  return result[0].id;
 }
 
 export async function getDebateById(debateId: number) {
@@ -117,20 +111,21 @@ export async function updateDebate(debateId: number, data: Partial<InsertDebate>
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  await db.update(debates).set(data).where(eq(debates.id, debateId));
+  await db.update(debates).set({ ...data, updatedAt: new Date() }).where(eq(debates.id, debateId));
 }
 
 export async function deleteDebate(debateId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  // Delete in order: votes -> responses -> rounds -> debate
+  // Delete in order: votes -> responses -> rounds -> debate results -> debate
   const debateRounds = await db.select().from(rounds).where(eq(rounds.debateId, debateId));
   for (const round of debateRounds) {
     await db.delete(votes).where(eq(votes.roundId, round.id));
   }
   await db.delete(responses).where(eq(responses.debateId, debateId));
   await db.delete(rounds).where(eq(rounds.debateId, debateId));
+  await db.delete(debateResults).where(eq(debateResults.debateId, debateId));
   await db.delete(debates).where(eq(debates.id, debateId));
 }
 
@@ -139,8 +134,8 @@ export async function createRound(round: InsertRound) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.insert(rounds).values(round);
-  return result[0].insertId;
+  const result = await db.insert(rounds).values(round).returning({ id: rounds.id });
+  return result[0].id;
 }
 
 export async function getRoundsByDebateId(debateId: number) {
@@ -162,8 +157,8 @@ export async function createResponse(response: InsertResponse) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.insert(responses).values(response);
-  return result[0].insertId;
+  const result = await db.insert(responses).values(response).returning({ id: responses.id });
+  return result[0].id;
 }
 
 export async function getResponsesByRoundId(roundId: number) {
@@ -185,8 +180,8 @@ export async function createVote(vote: InsertVote) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const result = await db.insert(votes).values(vote);
-  return result[0].insertId;
+  const result = await db.insert(votes).values(vote).returning({ id: votes.id });
+  return result[0].id;
 }
 
 export async function getVotesByRoundId(roundId: number) {
@@ -212,7 +207,7 @@ export async function getFullDebateData(debateId: number) {
     return { ...debate, rounds: [] };
   }
   
-  // Batch fetch all responses for this debate (instead of per-round queries)
+  // Batch fetch all responses for this debate
   const allResponses = await db.select()
     .from(responses)
     .where(eq(responses.debateId, debateId))
@@ -222,7 +217,7 @@ export async function getFullDebateData(debateId: number) {
   const roundIds = debateRounds.map(r => r.id);
   const allVotes = await db.select()
     .from(votes)
-    .where(sql`${votes.roundId} IN (${sql.join(roundIds.map(id => sql`${id}`), sql`, `)})`);
+    .where(sql`${votes.roundId} = ANY(${roundIds})`);
   
   // Group responses and votes by round
   const responsesByRound = new Map<number, typeof allResponses>();
@@ -273,7 +268,7 @@ export async function saveUserApiKey(apiKeyData: InsertUserApiKey) {
   if (existing.length > 0) {
     // Update existing key with encrypted value
     await db.update(userApiKeys)
-      .set({ apiKey: encryptedKey, isActive: true })
+      .set({ apiKey: encryptedKey, isActive: true, updatedAt: new Date() })
       .where(eq(userApiKeys.id, existing[0].id));
     return existing[0].id;
   } else {
@@ -281,8 +276,8 @@ export async function saveUserApiKey(apiKeyData: InsertUserApiKey) {
     const result = await db.insert(userApiKeys).values({
       ...apiKeyData,
       apiKey: encryptedKey,
-    });
-    return result[0].insertId;
+    }).returning({ id: userApiKeys.id });
+    return result[0].id;
   }
 }
 
@@ -332,7 +327,7 @@ export async function deleteUserApiKey(userId: number, provider: "openrouter" | 
   if (!db) throw new Error("Database not available");
   
   await db.update(userApiKeys)
-    .set({ isActive: false })
+    .set({ isActive: false, updatedAt: new Date() })
     .where(and(
       eq(userApiKeys.userId, userId),
       eq(userApiKeys.provider, provider)
@@ -344,8 +339,8 @@ export async function saveDebateResult(result: InsertDebateResult) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const insertResult = await db.insert(debateResults).values(result);
-  return insertResult[0].insertId;
+  const insertResult = await db.insert(debateResults).values(result).returning({ id: debateResults.id });
+  return insertResult[0].id;
 }
 
 export async function getDebateResult(debateId: number) {
@@ -398,7 +393,8 @@ export async function upsertModelStats(userId: number, modelId: string, pointsTo
         totalPeerVotes: sql`${modelStats.totalPeerVotes} + ${pointsToAdd.peerVotes}`,
         strongArgumentMentions: sql`${modelStats.strongArgumentMentions} + ${pointsToAdd.strongArguments > 0 ? 1 : 0}`,
         devilsAdvocateWins: sql`${modelStats.devilsAdvocateWins} + ${pointsToAdd.devilsAdvocateBonus > 0 ? 1 : 0}`,
-        recentPoints: pointsToAdd.total, // Will be recalculated
+        recentPoints: pointsToAdd.total,
+        updatedAt: new Date(),
       })
       .where(eq(modelStats.id, existing[0].id));
   } else {
@@ -550,10 +546,22 @@ export async function addUserFavoriteModel(userId: number, openRouterId: string,
   const db = await getDb();
   if (!db) return;
   
-  // Use INSERT IGNORE to avoid duplicate errors
-  await db.insert(userFavoriteModels)
-    .values({ userId, openRouterId, modelName })
-    .onDuplicateKeyUpdate({ set: { modelName } });
+  // Check if exists, if so update, otherwise insert
+  const existing = await db.select()
+    .from(userFavoriteModels)
+    .where(and(
+      eq(userFavoriteModels.userId, userId),
+      eq(userFavoriteModels.openRouterId, openRouterId)
+    ))
+    .limit(1);
+  
+  if (existing.length > 0) {
+    await db.update(userFavoriteModels)
+      .set({ modelName })
+      .where(eq(userFavoriteModels.id, existing[0].id));
+  } else {
+    await db.insert(userFavoriteModels).values({ userId, openRouterId, modelName });
+  }
 }
 
 export async function removeUserFavoriteModel(userId: number, openRouterId: string) {

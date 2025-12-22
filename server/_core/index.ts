@@ -3,6 +3,7 @@ import * as Sentry from "@sentry/node";
 import express from "express";
 import { createServer } from "http";
 import net from "net";
+import path from "path";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers/index";
@@ -56,6 +57,13 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  
+  // Serve local uploads directory in dev mode
+  if (process.env.DEV_MODE === "true") {
+    const uploadsDir = path.join(process.cwd(), "uploads");
+    app.use("/uploads", express.static(uploadsDir));
+    console.log("[Dev Mode] Serving local uploads from:", uploadsDir);
+  }
   
   // Health check endpoint (no rate limiting)
   app.get("/api/health", async (_req, res) => {

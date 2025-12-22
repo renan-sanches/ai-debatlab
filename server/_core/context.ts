@@ -1,6 +1,6 @@
 import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
 import type { User } from "../../drizzle/schema";
-import { sdk } from "./sdk";
+import { authenticateRequest } from "../supabase";
 
 export type TrpcContext = {
   req: CreateExpressContextOptions["req"];
@@ -14,9 +14,11 @@ export async function createContext(
   let user: User | null = null;
 
   try {
-    user = await sdk.authenticateRequest(opts.req);
+    // authenticateRequest handles both dev mode bypass and Supabase auth
+    user = await authenticateRequest(opts.req) ?? null;
   } catch (error) {
     // Authentication is optional for public procedures.
+    console.error("[Context] Authentication error:", error);
     user = null;
   }
 

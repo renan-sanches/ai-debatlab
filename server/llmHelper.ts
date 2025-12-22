@@ -344,14 +344,21 @@ async function callOpenRouterAPI(
   };
 }
 
-// Call default Manus Forge API
+// Call default API - uses OpenRouter directly if OPENROUTER_API_KEY is set, otherwise falls back to Manus Forge
 async function callDefaultAPI(
   model: AIModel,
   messages: LLMMessage[],
   maxTokens: number
 ): Promise<LLMInvokeResult> {
+  // Prefer OpenRouter direct if configured (faster, no proxy)
+  const openRouterKey = process.env.OPENROUTER_API_KEY;
+  if (openRouterKey) {
+    return callOpenRouterAPI(openRouterKey, model, messages, maxTokens);
+  }
+  
+  // Fall back to Manus Forge if configured
   if (!ENV.forgeApiKey) {
-    throw new Error("API key is not configured");
+    throw new Error("No API key configured. Set OPENROUTER_API_KEY or BUILT_IN_FORGE_API_KEY in your environment.");
   }
 
   const payload = {

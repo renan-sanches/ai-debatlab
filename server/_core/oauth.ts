@@ -1,53 +1,24 @@
-import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+/**
+ * OAuth Routes (Deprecated)
+ * 
+ * With Supabase Auth, OAuth is now handled client-side.
+ * This file is kept for backwards compatibility but the routes are no longer functional.
+ * 
+ * The auth flow now works as follows:
+ * 1. Client initiates OAuth via Supabase JS SDK
+ * 2. User is redirected to provider (Google, GitHub, etc.)
+ * 3. Provider redirects back to /auth/callback (client-side route)
+ * 4. Supabase handles token exchange automatically
+ * 5. Client sends access token in Authorization header for API calls
+ */
 import type { Express, Request, Response } from "express";
-import * as db from "../db";
-import { getSessionCookieOptions } from "./cookies";
-import { sdk } from "./sdk";
-
-function getQueryParam(req: Request, key: string): string | undefined {
-  const value = req.query[key];
-  return typeof value === "string" ? value : undefined;
-}
 
 export function registerOAuthRoutes(app: Express) {
+  // Legacy route - redirect to client-side login
   app.get("/api/oauth/callback", async (req: Request, res: Response) => {
-    const code = getQueryParam(req, "code");
-    const state = getQueryParam(req, "state");
-
-    if (!code || !state) {
-      res.status(400).json({ error: "code and state are required" });
-      return;
-    }
-
-    try {
-      const tokenResponse = await sdk.exchangeCodeForToken(code, state);
-      const userInfo = await sdk.getUserInfo(tokenResponse.accessToken);
-
-      if (!userInfo.openId) {
-        res.status(400).json({ error: "openId missing from user info" });
-        return;
-      }
-
-      await db.upsertUser({
-        openId: userInfo.openId,
-        name: userInfo.name || null,
-        email: userInfo.email ?? null,
-        loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
-        lastSignedIn: new Date(),
-      });
-
-      const sessionToken = await sdk.createSessionToken(userInfo.openId, {
-        name: userInfo.name || "",
-        expiresInMs: ONE_YEAR_MS,
-      });
-
-      const cookieOptions = getSessionCookieOptions(req);
-      res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
-
-      res.redirect(302, "/");
-    } catch (error) {
-      console.error("[OAuth] Callback failed", error);
-      res.status(500).json({ error: "OAuth callback failed" });
-    }
+    // With Supabase, OAuth callbacks are handled by the client
+    // Redirect to the client-side auth callback handler
+    const params = new URLSearchParams(req.query as Record<string, string>);
+    res.redirect(302, `/auth/callback?${params.toString()}`);
   });
 }
