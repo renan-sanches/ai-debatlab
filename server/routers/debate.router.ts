@@ -323,21 +323,34 @@ export const debateRouter = router({
         const rawVoteContent = response.choices[0]?.message?.content;
         const voteContent = typeof rawVoteContent === 'string' ? rawVoteContent : "";
         
+        // Build a map of all participant models for matching
+        const participantModelsMap = debate.participantModels.map(id => {
+          const m = getModelById(id);
+          return { id, name: m?.name || id, model: m };
+        });
+        
         // Parse vote from response - handle multiple formats
         const votePatterns = [
           /\*\*MY VOTE:\s*([^*\n]+)\*\*/i,
           /\*\*MY VOTE:\*\*\s*([^\n*]+)/i,
           /MY VOTE:\s*([^\n]+)/i,
-          /I vote for\s+([^.\n]+)/i,
-          /I'm voting for\s+([^.\n]+)/i,
-          /best argument.*?:\s*([^.\n]+)/i,
+          /I vote for\s+([^.\n,]+)/i,
+          /I'm voting for\s+([^.\n,]+)/i,
+          /I cast my vote for\s+([^.\n,]+)/i,
+          /my vote goes to\s+([^.\n,]+)/i,
+          /voting for\s+([^.\n,]+)/i,
+          /best argument.*?:\s*([^.\n,]+)/i,
+          /strongest argument.*?:\s*([^.\n,]+)/i,
+          /winner.*?:\s*([^.\n,]+)/i,
+          /I choose\s+([^.\n,]+)/i,
+          /I select\s+([^.\n,]+)/i,
         ];
         
         let votedForName = "";
         for (const pattern of votePatterns) {
           const match = voteContent.match(pattern);
           if (match) {
-            votedForName = match[1].trim().replace(/\*+/g, "");
+            votedForName = match[1].trim().replace(/\*+/g, "").replace(/^["']|["']$/g, "");
             break;
           }
         }
@@ -347,7 +360,9 @@ export const debateRouter = router({
           /\*\*WHY:\*\*\s*([\s\S]+?)(?=\n\n|$)/i,
           /\*\*REASON:\*\*\s*([\s\S]+?)(?=\n\n|$)/i,
           /WHY:\s*([\s\S]+?)(?=\n\n|$)/i,
+          /REASON:\s*([\s\S]+?)(?=\n\n|$)/i,
           /because\s+([^.]+\.)/i,
+          /Their argument\s+([^.]+\.)/i,
         ];
         
         let reason = "";
@@ -359,29 +374,61 @@ export const debateRouter = router({
           }
         }
         
+        // If no explicit pattern matched, use the first sentence as reason
+        if (!reason && voteContent.length > 0) {
+          const firstSentence = voteContent.match(/^[^.!?]+[.!?]/);
+          if (firstSentence) {
+            reason = firstSentence[0].trim();
+          }
+        }
+        
         if (votedForName) {
-          // More flexible model matching
-          const votedForModel = AI_MODELS.find(m => {
-            const nameLower = m.name.toLowerCase();
-            const voteLower = votedForName.toLowerCase();
-            return nameLower.includes(voteLower) ||
-                   voteLower.includes(nameLower) ||
-                   voteLower.includes(nameLower.split(" ")[0]) ||
-                   nameLower.split(" ")[0] === voteLower.split(" ")[0];
+          // More flexible model matching - check against all participants
+          const voteLower = votedForName.toLowerCase();
+          
+          // First try exact or close matches with participant models
+          let votedForParticipant = participantModelsMap.find(p => {
+            const nameLower = p.name.toLowerCase();
+            // Exact match
+            if (nameLower === voteLower) return true;
+            // Name contains vote
+            if (nameLower.includes(voteLower)) return true;
+            // Vote contains name
+            if (voteLower.includes(nameLower)) return true;
+            // First word matches
+            if (nameLower.split(/[\s-]/)[0] === voteLower.split(/[\s-]/)[0]) return true;
+            // Check if vote contains key part of model name (e.g., "Gemini" in "Gemini 2.5 Pro")
+            const nameWords = nameLower.split(/[\s-]+/);
+            const voteWords = voteLower.split(/[\s-]+/);
+            return nameWords.some(w => w.length > 3 && voteWords.includes(w)) ||
+                   voteWords.some(w => w.length > 3 && nameWords.includes(w));
           });
+          
+          // If no participant match, try AI_MODELS as fallback
+          if (!votedForParticipant) {
+            const aiModel = AI_MODELS.find(m => {
+              const nameLower = m.name.toLowerCase();
+              return nameLower.includes(voteLower) ||
+                     voteLower.includes(nameLower) ||
+                     nameLower.split(/[\s-]/)[0] === voteLower.split(/[\s-]/)[0];
+            });
+            if (aiModel) {
+              votedForParticipant = { id: aiModel.id, name: aiModel.name, model: aiModel };
+            }
+          }
 
-          if (votedForModel && votedForModel.id !== modelId) {
+          if (votedForParticipant && votedForParticipant.id !== modelId) {
             await db.createVote({
               roundId: input.roundId,
               voterModelId: modelId,
-              votedForModelId: votedForModel.id,
-              reason: reason || "",
+              votedForModelId: votedForParticipant.id,
+              reason: reason || voteContent.slice(0, 200),
             });
 
             votes.push({
               voterModelId: modelId,
-              votedForModelId: votedForModel.id,
-              reason: reason || "",
+              votedForModelId: votedForParticipant.id,
+              reason: reason || voteContent.slice(0, 200),
             });
           }
         }

@@ -10,7 +10,7 @@ import { Loader2, Sparkles, ChevronDown, ChevronUp, ArrowLeft, Download, Eye, Me
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
-import { AI_MODELS } from "../../../shared/models";
+import { AI_MODELS, getModelById } from "../../../shared/models";
 import { useStreamingResponse } from "@/hooks/useStreamingResponse";
 
 interface ResponseCardProps {
@@ -305,9 +305,9 @@ export default function Debate() {
       if (round.votes && round.votes.length > 0) {
         content += `### Voting Results\n\n`;
         round.votes.forEach((vote) => {
-          const voterModel = AI_MODELS.find(m => m.id === vote.voterModelId);
-          const votedModel = AI_MODELS.find(m => m.id === vote.votedForModelId);
-          content += `- **${voterModel?.name}** voted for **${votedModel?.name}**: ${vote.reason}\n`;
+          const voterModel = getModelById(vote.voterModelId);
+          const votedModel = getModelById(vote.votedForModelId);
+          content += `- **${voterModel?.name || vote.voterModelId}** voted for **${votedModel?.name || vote.votedForModelId}**: ${vote.reason}\n`;
         });
         content += "\n";
       }
@@ -540,13 +540,13 @@ export default function Debate() {
               <CardContent>
                 <div className="space-y-2">
                   {currentRound.votes.map((vote, i) => {
-                    const voterModel = AI_MODELS.find(m => m.id === vote.voterModelId);
-                    const votedModel = AI_MODELS.find(m => m.id === vote.votedForModelId);
+                    const voterModel = getModelById(vote.voterModelId);
+                    const votedModel = getModelById(vote.votedForModelId);
                     return (
                       <div key={i} className="text-sm">
-                        <span className="font-medium">{voterModel?.name}</span>
+                        <span className="font-medium">{voterModel?.name || vote.voterModelId}</span>
                         <span className="text-muted-foreground"> voted for </span>
-                        <span className="font-medium">{votedModel?.name}</span>
+                        <span className="font-medium">{votedModel?.name || vote.votedForModelId}</span>
                         {vote.reason && (
                           <p className="text-muted-foreground ml-4 mt-1 text-xs">
                             "{vote.reason}"
