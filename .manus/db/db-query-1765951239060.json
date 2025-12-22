@@ -1,0 +1,9 @@
+{
+  "query": "CREATE TABLE IF NOT EXISTS `modelStats` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `userId` int NOT NULL,\n  `modelId` varchar(64) NOT NULL,\n  `totalPoints` int NOT NULL DEFAULT 0,\n  `totalDebates` int NOT NULL DEFAULT 0,\n  `moderatorPicks` int NOT NULL DEFAULT 0,\n  `totalPeerVotes` int NOT NULL DEFAULT 0,\n  `strongArgumentMentions` int NOT NULL DEFAULT 0,\n  `devilsAdvocateWins` int NOT NULL DEFAULT 0,\n  `recentPoints` int NOT NULL DEFAULT 0,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY(`id`),\n  UNIQUE KEY `modelStats_user_model` (`userId`, `modelId`)\n);",
+  "command": "mysql --batch --raw --column-names --default-character-set=utf8mb4 --host gateway02.us-east-1.prod.aws.tidbcloud.com --port 4000 --user 3CEPcpWdW3xz7sV.e4f960285341 --database kRbiuaopfnuwbYV2H8GD5R --execute CREATE TABLE IF NOT EXISTS `modelStats` (\n  `id` int AUTO_INCREMENT NOT NULL,\n  `userId` int NOT NULL,\n  `modelId` varchar(64) NOT NULL,\n  `totalPoints` int NOT NULL DEFAULT 0,\n  `totalDebates` int NOT NULL DEFAULT 0,\n  `moderatorPicks` int NOT NULL DEFAULT 0,\n  `totalPeerVotes` int NOT NULL DEFAULT 0,\n  `strongArgumentMentions` int NOT NULL DEFAULT 0,\n  `devilsAdvocateWins` int NOT NULL DEFAULT 0,\n  `recentPoints` int NOT NULL DEFAULT 0,\n  `updatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,\n  PRIMARY KEY(`id`),\n  UNIQUE KEY `modelStats_user_model` (`userId`, `modelId`)\n);",
+  "rows": [],
+  "messages": [],
+  "stdout": "",
+  "stderr": "",
+  "execution_time_ms": 203
+}

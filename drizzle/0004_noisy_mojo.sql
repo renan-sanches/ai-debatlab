@@ -1,0 +1,1 @@
+ALTER TABLE `debates` ADD `imageUrl` text;
