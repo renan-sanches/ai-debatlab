@@ -1,4 +1,4 @@
-import { eq, desc, and, sql, gte } from "drizzle-orm";
+import { eq, desc, and, sql, gte, inArray } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { InsertUser, users, debates, rounds, responses, votes, userApiKeys, debateResults, modelStats, userFavoriteModels, InsertDebate, InsertRound, InsertResponse, InsertVote, InsertUserApiKey, InsertDebateResult, InsertModelStat, InsertUserFavoriteModel } from "../drizzle/schema";
@@ -215,9 +215,9 @@ export async function getFullDebateData(debateId: number) {
   
   // Batch fetch all votes for all rounds in this debate
   const roundIds = debateRounds.map(r => r.id);
-  const allVotes = await db.select()
-    .from(votes)
-    .where(sql`${votes.roundId} = ANY(${roundIds})`);
+  const allVotes = roundIds.length > 0 
+    ? await db.select().from(votes).where(inArray(votes.roundId, roundIds))
+    : [];
   
   // Group responses and votes by round
   const responsesByRound = new Map<number, typeof allResponses>();
