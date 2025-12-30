@@ -17,7 +17,7 @@ export function useAuth(options?: UseAuthOptions) {
   const [isLoading, setIsLoading] = useState(true);
   
   const utils = trpc.useUtils();
-  
+
   // Get user from our backend (synced with Supabase)
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: false,
@@ -44,7 +44,7 @@ export function useAuth(options?: UseAuthOptions) {
           // Refresh our backend user data
           utils.auth.me.invalidate();
         } else if (event === "SIGNED_OUT") {
-          utils.auth.me.setData(undefined, null);
+      utils.auth.me.setData(undefined, null);
         }
         
         setIsLoading(false);

@@ -64,7 +64,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
         loginMethod: user.loginMethod,
         role: user.role || "user",
         lastSignedIn: user.lastSignedIn || new Date(),
-      });
+    });
     }
   } catch (error) {
     console.error("[Database] Failed to upsert user:", error);
@@ -237,7 +237,7 @@ export async function getFullDebateData(debateId: number) {
   
   // Assemble rounds with their data
   const roundsWithData = debateRounds.map(round => ({
-    ...round,
+        ...round,
     responses: responsesByRound.get(round.id) || [],
     votes: votesByRound.get(round.id) || [],
   }));
@@ -418,10 +418,10 @@ export async function getLeaderboard(userId: number, timeFilter?: "all" | "30day
   
   // For "all" filter or no filter, return pre-aggregated stats
   if (!timeFilter || timeFilter === "all") {
-    return db.select()
-      .from(modelStats)
-      .where(eq(modelStats.userId, userId))
-      .orderBy(desc(modelStats.totalPoints));
+  return db.select()
+    .from(modelStats)
+    .where(eq(modelStats.userId, userId))
+    .orderBy(desc(modelStats.totalPoints));
   }
   
   // For time-based filters, calculate from debateResults
