@@ -6,6 +6,7 @@ import path from "path";
 
 export async function setupVite(app: Express, server: Server) {
   // Load Vite lazily so production bundle doesn't require the dev dependency
+  // This prevents "Cannot find package 'vite'" errors in production
   const [{ createServer: createViteServer }, { default: viteConfig }] = await Promise.all([
     import("vite"),
     import("../../vite.config"),
