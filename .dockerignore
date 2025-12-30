@@ -1,0 +1,52 @@
+# Dependencies
+node_modules
+
+# Build outputs (we rebuild in Docker)
+dist
+
+# Development files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Test files
+coverage
+.nyc_output
+*.test.ts
+*.spec.ts
+__tests__
+
+# Documentation
+*.md
+!README.md
+
+# Uploads (user files)
+uploads
+
+# CI/CD configs (not needed in container)
+.github
+
+# Misc
+.dockerignore
+Dockerfile
+cloudbuild.yaml
+
