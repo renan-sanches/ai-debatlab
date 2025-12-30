@@ -1,6 +1,14 @@
 # Build stage
 FROM node:22-alpine AS builder
 
+# Build arguments for Vite env vars (needed at build time)
+ARG VITE_SUPABASE_URL
+ARG VITE_SUPABASE_ANON_KEY
+
+# Set as env vars so Vite can access them during build
+ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
+ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
+
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@10.4.1 --activate
 
@@ -18,6 +26,9 @@ COPY . .
 
 # Build the application
 RUN pnpm build
+
+# Debug: List dist contents
+RUN ls -la dist/ && ls -la dist/public/ || echo "dist/public not found"
 
 # Production stage
 FROM node:22-alpine AS runner

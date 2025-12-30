@@ -1,8 +1,12 @@
 steps:
-  # Build the container image
+  # Build the container image with build args for Vite env vars
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
+      - '--build-arg'
+      - 'VITE_SUPABASE_URL=${_SUPABASE_URL}'
+      - '--build-arg'
+      - 'VITE_SUPABASE_ANON_KEY=${_SUPABASE_ANON_KEY}'
       - '-t'
       - 'gcr.io/$PROJECT_ID/ai-debatelab:$COMMIT_SHA'
       - '-t'
@@ -48,6 +52,8 @@ steps:
       - '0'
       - '--max-instances'
       - '2'
+      - '--set-env-vars'
+      - 'NODE_ENV=production,DATABASE_URL=${_DATABASE_URL},SUPABASE_URL=${_SUPABASE_URL},SUPABASE_ANON_KEY=${_SUPABASE_ANON_KEY},SUPABASE_SERVICE_ROLE_KEY=${_SUPABASE_SERVICE_ROLE_KEY},OPENROUTER_API_KEY=${_OPENROUTER_API_KEY},ENCRYPTION_KEY=${_ENCRYPTION_KEY}'
 
 images:
   - 'gcr.io/$PROJECT_ID/ai-debatelab:$COMMIT_SHA'
@@ -57,4 +63,13 @@ options:
   logging: CLOUD_LOGGING_ONLY
 
 timeout: '1200s'
+
+# Substitution variables - set these in Cloud Build trigger settings
+substitutions:
+  _DATABASE_URL: ''
+  _SUPABASE_URL: ''
+  _SUPABASE_ANON_KEY: ''
+  _SUPABASE_SERVICE_ROLE_KEY: ''
+  _OPENROUTER_API_KEY: ''
+  _ENCRYPTION_KEY: ''
 

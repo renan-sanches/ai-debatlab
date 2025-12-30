@@ -13,6 +13,13 @@ import streamingRoutes from "../streamingRoutes";
 import { apiLimiter, streamingLimiter, authLimiter } from "../middleware/rateLimit";
 import { getDb } from "../db";
 
+// Log startup environment for debugging
+console.log("[Startup] NODE_ENV:", process.env.NODE_ENV);
+console.log("[Startup] PORT:", process.env.PORT);
+console.log("[Startup] CWD:", process.cwd());
+console.log("[Startup] DATABASE_URL:", process.env.DATABASE_URL ? "***SET***" : "NOT SET");
+console.log("[Startup] SUPABASE_URL:", process.env.SUPABASE_URL ? "***SET***" : "NOT SET");
+
 // Initialize Sentry error tracking
 if (process.env.SENTRY_DSN) {
   Sentry.init({
