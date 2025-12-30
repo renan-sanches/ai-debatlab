@@ -1,16 +1,15 @@
 import express, { type Express } from "express";
 import fs from "fs";
 import { type Server } from "http";
-import { nanoid } from "nanoid";
 import path from "path";
 
+// Dynamic import for Vite dev server - only loaded in development
+// This avoids importing devDependencies in production builds
 export async function setupVite(app: Express, server: Server) {
-  // Load Vite lazily so production bundle doesn't require the dev dependency
-  // This prevents "Cannot find package 'vite'" errors in production
-  const [{ createServer: createViteServer }, { default: viteConfig }] = await Promise.all([
-    import("vite"),
-    import("../../vite.config"),
-  ]);
+  // Dynamically import vite and config only when needed (development)
+  const { createServer: createViteServer } = await import("vite");
+  const { nanoid } = await import("nanoid");
+  const viteConfig = (await import("../../vite.config")).default;
 
   const serverOptions = {
     middlewareMode: true,
@@ -58,9 +57,9 @@ export function serveStatic(app: Express) {
   const distPath = process.env.NODE_ENV === "production"
     ? path.resolve(process.cwd(), "dist", "public")
     : path.resolve(import.meta.dirname, "../..", "dist", "public");
-  
+
   console.log(`[Static] Serving from: ${distPath}`);
-  
+
   if (!fs.existsSync(distPath)) {
     console.error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
