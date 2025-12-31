@@ -19,12 +19,12 @@ import { extractPdfForPrompt } from "../pdfExtractor";
 
 /**
  * Generate a short, descriptive title for a debate question
- * Uses a fast, cheap model (Gemini Flash) for efficiency
+ * Uses GPT-4o for fast, reliable title generation
  */
 async function generateDebateTitle(question: string): Promise<string> {
   try {
     const response = await invokeLLMWithModel({
-      model: "gemini-2-flash", // Fast and cheap model
+      model: "gpt-4o", // Fast and reliable model
       messages: [
         {
           role: "system",

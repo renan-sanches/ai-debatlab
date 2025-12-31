@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Sparkles, BookOpen, LogIn, Settings, Key, AlertCircle, Image, Camera, X, Send, Trophy, FileText } from "lucide-react";
+import { Loader2, Sparkles, BookOpen, LogIn, Settings, Key, AlertCircle, Image, Camera, X, Send, Trophy, FileText, User } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import { VoiceInput } from "@/components/VoiceInput";
@@ -255,9 +255,10 @@ export default function Home() {
                   <Settings className="h-4 w-4 mr-2" />
                   Settings
                 </Button>
-                <span className="text-sm text-muted-foreground">
+                <Button variant="ghost" onClick={() => navigate("/account")} className="text-sm text-muted-foreground hover:text-foreground">
+                  <User className="h-4 w-4 mr-2" />
                   {user?.name || user?.email}
-                </span>
+                </Button>
               </>
             ) : (
               <Button onClick={() => window.location.href = getLoginUrl()}>

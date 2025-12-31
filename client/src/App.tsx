@@ -11,6 +11,7 @@ import Settings from "./pages/Settings";
 import Leaderboard from "./pages/Leaderboard";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/AuthCallback";
+import Account from "./pages/Account";
 
 function Router() {
   return (
@@ -21,6 +22,7 @@ function Router() {
       <Route path="/debate/:id" component={Debate} />
       <Route path="/library" component={Library} />
       <Route path="/settings" component={Settings} />
+      <Route path="/account" component={Account} />
       <Route path="/leaderboard" component={Leaderboard} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />

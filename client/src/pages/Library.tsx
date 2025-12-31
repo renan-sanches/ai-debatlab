@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Loader2, Sparkles, ArrowLeft, Search, Trash2, Play, Calendar, MessageSquare, LogIn } from "lucide-react";
+import { Loader2, Sparkles, ArrowLeft, Search, Trash2, Play, Calendar, MessageSquare, LogIn, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { AI_MODELS } from "../../../shared/models";
 
@@ -214,10 +214,21 @@ export default function Library() {
                           size="sm"
                           onClick={() => navigate(`/debate/${debate.id}`)}
                         >
-                          <Play className="h-4 w-4 mr-1" />
-                          Continue
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
                         </Button>
-                        
+
+                        {debate.status === "active" && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => navigate(`/debate/${debate.id}?autostart=true`)}
+                          >
+                            <Play className="h-4 w-4 mr-1" />
+                            Continue
+                          </Button>
+                        )}
+
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
