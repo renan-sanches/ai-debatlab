@@ -13,14 +13,23 @@ if (!supabaseUrl || !supabaseAnonKey) {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 /**
- * Extract the access token from the Authorization header
+ * Extract the access token from the Authorization header or query parameter
+ * Query parameter is needed for SSE (EventSource) which cannot send custom headers
  */
 function extractToken(req: Request): string | null {
+  // First try Authorization header
   const authHeader = req.headers.authorization;
-  if (!authHeader?.startsWith("Bearer ")) {
-    return null;
+  if (authHeader?.startsWith("Bearer ")) {
+    return authHeader.slice(7);
   }
-  return authHeader.slice(7);
+
+  // Fallback to query parameter (for SSE/EventSource)
+  const queryToken = req.query.token as string;
+  if (queryToken) {
+    return queryToken;
+  }
+
+  return null;
 }
 
 /**

@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef } from "react";
+import { getAccessToken } from "../lib/supabase";
 
 interface UsageInfo {
   promptTokens: number;
@@ -53,9 +54,17 @@ export function useStreamingResponse(options: UseStreamingResponseOptions = {}) 
     setIsStreaming(true);
     abortControllerRef.current = new AbortController();
 
+    // Get access token for authentication (EventSource can't send headers, so we use query param)
+    const token = await getAccessToken();
+
     return new Promise((resolve) => {
-      const url = `/api/stream/debate/${debateId}/response?roundId=${roundId}&modelId=${encodeURIComponent(modelId)}&responseOrder=${responseOrder}&useUserApiKey=${useUserApiKey}`;
-      
+      let url = `/api/stream/debate/${debateId}/response?roundId=${roundId}&modelId=${encodeURIComponent(modelId)}&responseOrder=${responseOrder}&useUserApiKey=${useUserApiKey}`;
+
+      // Add token as query parameter since EventSource doesn't support custom headers
+      if (token) {
+        url += `&token=${encodeURIComponent(token)}`;
+      }
+
       const eventSource = new EventSource(url);
 
       eventSource.onmessage = (event) => {
