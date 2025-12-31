@@ -17,6 +17,40 @@ import {
 } from "../prompts";
 import { extractPdfForPrompt } from "../pdfExtractor";
 
+/**
+ * Generate a short, descriptive title for a debate question
+ * Uses a fast, cheap model (Gemini Flash) for efficiency
+ */
+async function generateDebateTitle(question: string): Promise<string> {
+  try {
+    const response = await invokeLLMWithModel({
+      model: "gemini-2-flash", // Fast and cheap model
+      messages: [
+        {
+          role: "system",
+          content: "You are a title generator. Generate a short, concise title (3-8 words) that summarizes the main topic of the debate question. Return ONLY the title, no quotes, no punctuation at the end, no explanation.",
+        },
+        {
+          role: "user",
+          content: `Generate a short title for this debate question:\n\n${question}`,
+        },
+      ],
+      maxTokens: 50,
+    });
+
+    const rawTitle = response.choices[0]?.message?.content;
+    if (typeof rawTitle === "string" && rawTitle.trim().length > 0) {
+      // Clean up the title: remove quotes, trim, limit length
+      return rawTitle.trim().replace(/^["']|["']$/g, "").slice(0, 100);
+    }
+  } catch (error) {
+    console.error("[Title Generation] Failed to generate title:", error);
+  }
+
+  // Fallback: use first 50 chars of question
+  return question.slice(0, 50) + (question.length > 50 ? "..." : "");
+}
+
 export const debateRouter = router({
   // Create a new debate
   create: protectedProcedure
@@ -33,6 +67,9 @@ export const debateRouter = router({
       pdfUrl: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
+      // Generate AI title if not provided
+      const title = input.title || await generateDebateTitle(input.question);
+
       const debateId = await db.createDebate({
         userId: ctx.user.id,
         question: input.question,
@@ -41,7 +78,7 @@ export const debateRouter = router({
         devilsAdvocateEnabled: input.devilsAdvocateEnabled,
         devilsAdvocateModel: input.devilsAdvocateModel,
         votingEnabled: input.votingEnabled,
-        title: input.title || input.question.slice(0, 100),
+        title,
         tags: input.tags || [],
         imageUrl: input.imageUrl,
         pdfUrl: input.pdfUrl,
@@ -103,6 +140,21 @@ export const debateRouter = router({
       }
       await db.deleteDebate(input.debateId);
       return { success: true };
+    }),
+
+  // Regenerate title using AI
+  regenerateTitle: protectedProcedure
+    .input(z.object({ debateId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const debate = await db.getDebateById(input.debateId);
+      if (!debate || debate.userId !== ctx.user.id) {
+        throw new Error("Debate not found");
+      }
+
+      const newTitle = await generateDebateTitle(debate.question);
+      await db.updateDebate(input.debateId, { title: newTitle });
+
+      return { title: newTitle };
     }),
 
   // Upload image for debate
