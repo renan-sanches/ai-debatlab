@@ -102,6 +102,7 @@ export default function Debate() {
   const [streamingContent, setStreamingContent] = useState<Record<string, string>>({});
   const [isEditingQuestion, setIsEditingQuestion] = useState(false);
   const [editedQuestion, setEditedQuestion] = useState("");
+  const [selectedRoundIndex, setSelectedRoundIndex] = useState<number | null>(null);
   const hasAutoStarted = useRef(false);
   const searchParams = useSearch();
   
@@ -161,7 +162,11 @@ export default function Debate() {
     }>;
   } | null>(null);
 
-  const currentRound = debate?.rounds?.[debate.rounds.length - 1];
+  // Selected round (default to last round, but can be changed by user)
+  const latestRoundIndex = debate?.rounds ? debate.rounds.length - 1 : 0;
+  const activeRoundIndex = selectedRoundIndex ?? latestRoundIndex;
+  const currentRound = debate?.rounds?.[activeRoundIndex];
+  const isViewingLatestRound = activeRoundIndex === latestRoundIndex;
   const allResponsesComplete = currentRound?.responses?.length === debate?.participantModels?.length;
 
   // Auto-start debate if coming from home page with autostart param
@@ -440,21 +445,39 @@ export default function Debate() {
       {/* Main Content */}
       <main className="container py-8">
         <div className="max-w-4xl mx-auto space-y-6">
-          {/* Round indicator */}
+          {/* Round indicator - clickable tabs */}
           {debate.rounds && debate.rounds.length > 1 && (
-            <div className="flex items-center gap-2 mb-4">
-              {debate.rounds.map((round, i) => (
-                <div
-                  key={round.id}
-                  className={`px-3 py-1 rounded-full text-sm ${
-                    i === debate.rounds!.length - 1
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  Round {round.roundNumber}
+            <div className="space-y-2 mb-4">
+              <div className="flex items-center gap-2">
+                {debate.rounds.map((round, i) => (
+                  <button
+                    key={round.id}
+                    onClick={() => setSelectedRoundIndex(i)}
+                    disabled={isGenerating}
+                    className={`px-3 py-1 rounded-full text-sm transition-colors ${
+                      i === activeRoundIndex
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:bg-muted/80 cursor-pointer"
+                    } ${isGenerating ? "opacity-50 cursor-not-allowed" : ""}`}
+                  >
+                    Round {round.roundNumber}
+                  </button>
+                ))}
+              </div>
+              {!isViewingLatestRound && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 px-3 py-2 rounded-lg">
+                  <Eye className="h-4 w-4" />
+                  <span>Viewing Round {currentRound?.roundNumber} history</span>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 ml-2"
+                    onClick={() => setSelectedRoundIndex(null)}
+                  >
+                    Go to latest round →
+                  </Button>
                 </div>
-              ))}
+              )}
             </div>
           )}
 
@@ -468,8 +491,8 @@ export default function Debate() {
             </Card>
           )}
 
-          {/* Start generation button */}
-          {(!currentRound?.responses || currentRound.responses.length === 0) && !isGenerating && (
+          {/* Start generation button - only show on latest round */}
+          {isViewingLatestRound && (!currentRound?.responses || currentRound.responses.length === 0) && !isGenerating && (
             <Card className="border-dashed">
               <CardContent className="py-12 text-center">
                 <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
@@ -485,8 +508,8 @@ export default function Debate() {
             </Card>
           )}
 
-          {/* Streaming response card */}
-          {streamingModelId && streamingContent[streamingModelId] && (
+          {/* Streaming response card - only show on latest round */}
+          {isViewingLatestRound && streamingModelId && streamingContent[streamingModelId] && (
             <ResponseCard
               modelId={streamingModelId}
               modelName={AI_MODELS.find(m => m.id === streamingModelId)?.name || streamingModelId}
@@ -497,8 +520,8 @@ export default function Debate() {
             />
           )}
 
-          {/* Loading state for next model */}
-          {isGenerating && !streamingContent[debate.participantModels[currentModelIndex]] && (
+          {/* Loading state for next model - only show on latest round */}
+          {isViewingLatestRound && isGenerating && !streamingContent[debate.participantModels[currentModelIndex]] && (
             <Card className="border-primary/50">
               <CardContent className="py-6">
                 <div className="flex items-center gap-4">
@@ -560,8 +583,8 @@ export default function Debate() {
             </Card>
           )}
 
-          {/* Show Moderator Button */}
-          {allResponsesComplete && votingComplete && !moderatorComplete && !generateModerator.isPending && (
+          {/* Show Moderator Button - only show on latest round */}
+          {isViewingLatestRound && allResponsesComplete && votingComplete && !moderatorComplete && !generateModerator.isPending && (
             <div className="flex justify-center py-4">
               <Button size="lg" onClick={handleShowModerator}>
                 <Eye className="h-4 w-4 mr-2" />
@@ -570,8 +593,8 @@ export default function Debate() {
             </div>
           )}
 
-          {/* Moderator Loading */}
-          {generateModerator.isPending && (
+          {/* Moderator Loading - only show on latest round */}
+          {isViewingLatestRound && generateModerator.isPending && (
             <Card className="moderator-section">
               <CardContent className="py-6">
                 <div className="flex items-center gap-4">
@@ -610,22 +633,24 @@ export default function Debate() {
                   <div className="mt-6 p-4 bg-background/50 rounded-lg">
                     <p className="text-sm text-muted-foreground mb-2">Suggested follow-up:</p>
                     <p className="text-foreground italic">"{currentRound.suggestedFollowUp}"</p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-3"
-                      onClick={() => setFollowUpQuestion(currentRound.suggestedFollowUp || "")}
-                    >
-                      Use this question
-                    </Button>
+                    {isViewingLatestRound && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => setFollowUpQuestion(currentRound.suggestedFollowUp || "")}
+                      >
+                        Use this question
+                      </Button>
+                    )}
                   </div>
                 )}
               </CardContent>
             </Card>
           )}
 
-          {/* Follow-up Question Input */}
-          {moderatorComplete && debate?.status !== "completed" && (
+          {/* Follow-up Question Input - only show on latest round */}
+          {isViewingLatestRound && moderatorComplete && debate?.status !== "completed" && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg">Continue the Debate</CardTitle>
