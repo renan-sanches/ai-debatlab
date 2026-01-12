@@ -20,7 +20,7 @@ import {
   Plus
 } from "lucide-react";
 import { toast } from "sonner";
-import { DashboardLayout } from "@/components/DashboardLayout";
+import DashboardLayout from "@/components/DashboardLayout";
 
 type APIProvider = "openrouter" | "anthropic" | "openai" | "google";
 

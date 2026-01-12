@@ -35,7 +35,7 @@ import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 import { AI_MODELS, getModelById } from "../../../shared/models";
 import { useStreamingResponse } from "@/hooks/useStreamingResponse";
-import { DashboardLayout } from "@/components/DashboardLayout";
+import DashboardLayout from "@/components/DashboardLayout";
 
 interface ResponseCardProps {
   modelId: string;
@@ -385,8 +385,8 @@ export default function Debate() {
                     key={round.id}
                     onClick={() => setSelectedRoundIndex(i)}
                     className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${i === activeRoundIndex
-                        ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105"
-                        : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                      ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105"
+                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                       }`}
                   >
                     ROUND {round.roundNumber}

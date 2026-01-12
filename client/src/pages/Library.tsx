@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { AI_MODELS } from "../../../shared/models";
-import { DashboardLayout } from "@/components/DashboardLayout";
+import DashboardLayout from "@/components/DashboardLayout";
 
 export default function Library() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();

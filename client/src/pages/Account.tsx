@@ -18,7 +18,7 @@ import {
   Shield,
   Zap
 } from "lucide-react";
-import { DashboardLayout } from "@/components/DashboardLayout";
+import DashboardLayout from "@/components/DashboardLayout";
 
 export default function Account() {
   const { loading: authLoading, isAuthenticated, user } = useAuth();

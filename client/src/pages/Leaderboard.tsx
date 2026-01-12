@@ -21,7 +21,7 @@ import {
   Award
 } from "lucide-react";
 import { AI_MODELS } from "../../../shared/models";
-import { DashboardLayout } from "@/components/DashboardLayout";
+import DashboardLayout from "@/components/DashboardLayout";
 
 export default function Leaderboard() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
@@ -144,9 +144,9 @@ export default function Leaderboard() {
                               <tr key={entry.modelId} className="group hover:bg-white/[0.02] transition-colors">
                                 <td className="px-8 py-6">
                                   <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm ${entry.rank === 1 ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" :
-                                      entry.rank === 2 ? "bg-slate-300/10 text-slate-300 border border-slate-300/20" :
-                                        entry.rank === 3 ? "bg-amber-800/10 text-amber-800 border border-amber-800/20" :
-                                          "text-muted-foreground"
+                                    entry.rank === 2 ? "bg-slate-300/10 text-slate-300 border border-slate-300/20" :
+                                      entry.rank === 3 ? "bg-amber-800/10 text-amber-800 border border-amber-800/20" :
+                                        "text-muted-foreground"
                                     }`}>
                                     {entry.rank}
                                   </div>
