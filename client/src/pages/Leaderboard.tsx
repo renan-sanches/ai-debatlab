@@ -1,17 +1,31 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Trophy, Target, Vote, Lightbulb, Drama, TrendingUp, Swords, ArrowLeft, Sparkles, BookOpen } from "lucide-react";
-import { getLoginUrl } from "@/const";
+import {
+  Trophy,
+  Target,
+  Vote,
+  Lightbulb,
+  Drama,
+  TrendingUp,
+  Swords,
+  Sparkles,
+  Loader2,
+  Medal,
+  Activity,
+  Award
+} from "lucide-react";
 import { AI_MODELS } from "../../../shared/models";
+import { DashboardLayout } from "@/components/DashboardLayout";
 
 export default function Leaderboard() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const [, navigate] = useLocation();
   const [timeFilter, setTimeFilter] = useState<"all" | "30days" | "week" | "10debates">("all");
   const [selectedModelA, setSelectedModelA] = useState<string>("");
   const [selectedModelB, setSelectedModelB] = useState<string>("");
@@ -34,22 +48,11 @@ export default function Leaderboard() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
-        <Trophy className="w-16 h-16 text-yellow-500" />
-        <h1 className="text-2xl font-bold">AI Leaderboard</h1>
-        <p className="text-muted-foreground">Sign in to view your AI model rankings</p>
-        <Button asChild>
-          <a href={getLoginUrl()}>Sign In</a>
-        </Button>
-      </div>
+      <DashboardLayout>
+        <div className="h-full flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
     );
   }
 
@@ -61,341 +64,313 @@ export default function Leaderboard() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-        <div className="container flex items-center justify-between h-16">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center gap-2 text-primary hover:opacity-80">
-              <Sparkles className="w-6 h-6" />
-              <span className="font-bold text-lg">AI DebateLab</span>
-            </Link>
+    <DashboardLayout>
+      <div className="min-h-full premium-bg p-6 lg:p-10">
+        <div className="max-w-6xl mx-auto space-y-10">
+          {/* Header */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-amber-500 font-bold text-xs uppercase tracking-[0.3em] mb-1">
+                <Trophy className="h-4 w-4" />
+                Performance Metrics
+              </div>
+              <h1 className="text-4xl font-black tracking-tight text-foreground">
+                AI <span className="text-amber-500 italic">Leaderboard</span>
+              </h1>
+              <p className="text-muted-foreground text-sm max-w-md">
+                Tracking model performance based on logic, dialectics, and peer review data.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Select value={timeFilter} onValueChange={(v) => setTimeFilter(v as typeof timeFilter)}>
+                <SelectTrigger className="w-[180px] bg-background/40 backdrop-blur-xl border-white/5 rounded-xl h-12 shadow-inner">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="glass-panel border-white/10 rounded-xl">
+                  <SelectItem value="all">All Time</SelectItem>
+                  <SelectItem value="30days">Last 30 Days</SelectItem>
+                  <SelectItem value="week">This Week</SelectItem>
+                  <SelectItem value="10debates">Last 10 Debates</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-          <nav className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="ghost" size="sm">
-                <Sparkles className="w-4 h-4 mr-2" />
-                New Debate
-              </Button>
-            </Link>
-            <Link href="/library">
-              <Button variant="ghost" size="sm">
-                <BookOpen className="w-4 h-4 mr-2" />
-                Library
-              </Button>
-            </Link>
-            <span className="text-sm text-muted-foreground">{user?.name}</span>
-          </nav>
-        </div>
-      </header>
 
-      <main className="container py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Trophy className="w-8 h-8 text-yellow-500" />
-              AI Leaderboard
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Track which AI models perform best in your debates
-            </p>
-          </div>
-          <Select value={timeFilter} onValueChange={(v) => setTimeFilter(v as typeof timeFilter)}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Time</SelectItem>
-              <SelectItem value="30days">Last 30 Days</SelectItem>
-              <SelectItem value="week">This Week</SelectItem>
-              <SelectItem value="10debates">Last 10 Debates</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+          <Tabs defaultValue="leaderboard" className="space-y-8">
+            <div className="flex justify-center">
+              <TabsList className="bg-background/40 backdrop-blur-2xl p-1.5 rounded-2xl border border-white/5 h-auto self-center">
+                <TabsTrigger value="leaderboard" className="px-8 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 transition-all">Rankings</TabsTrigger>
+                <TabsTrigger value="breakdown" className="px-8 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 transition-all">Breakdown</TabsTrigger>
+                <TabsTrigger value="headtohead" className="px-8 py-2.5 rounded-xl font-bold text-xs uppercase tracking-widest data-[state=active]:bg-primary data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20 transition-all">H2H</TabsTrigger>
+              </TabsList>
+            </div>
 
-        <Tabs defaultValue="leaderboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-md">
-            <TabsTrigger value="leaderboard">Rankings</TabsTrigger>
-            <TabsTrigger value="breakdown">Breakdown</TabsTrigger>
-            <TabsTrigger value="headtohead">Head-to-Head</TabsTrigger>
-          </TabsList>
-
-          {/* Main Leaderboard */}
-          <TabsContent value="leaderboard">
-            <Card>
-              <CardHeader className="pb-4">
-                <CardTitle className="flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-yellow-500" />
-                  {timeFilterLabels[timeFilter]} Leaderboard
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="text-center py-8 text-muted-foreground">Loading...</div>
-                ) : !leaderboard || leaderboard.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground mb-4">No debate data yet</p>
-                    <Link href="/">
-                      <Button>Start Your First Debate</Button>
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full">
-                      <thead>
-                        <tr className="border-b border-border text-left text-sm text-muted-foreground">
-                          <th className="pb-3 pr-4">Rank</th>
-                          <th className="pb-3 pr-4">Model</th>
-                          <th className="pb-3 pr-4 text-right">Points</th>
-                          <th className="pb-3 pr-4 text-right">Debates</th>
-                          <th className="pb-3 text-right">Avg/PPD</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {leaderboard.map((entry) => (
-                          <tr key={entry.modelId} className="border-b border-border/50 hover:bg-muted/30">
-                            <td className="py-4 pr-4">
-                              <span className={`font-bold ${
-                                entry.rank === 1 ? "text-yellow-500" :
-                                entry.rank === 2 ? "text-gray-400" :
-                                entry.rank === 3 ? "text-amber-600" :
-                                "text-muted-foreground"
-                              }`}>
-                                {entry.rank}
-                              </span>
-                            </td>
-                            <td className="py-4 pr-4">
-                              <div className="flex items-center gap-2">
-                                <div 
-                                  className="w-3 h-3 rounded-full" 
-                                  style={{ backgroundColor: entry.modelColor }}
-                                />
-                                <span className="font-medium">{entry.modelName}</span>
-                              </div>
-                            </td>
-                            <td className="py-4 pr-4 text-right font-bold">{entry.totalPoints}</td>
-                            <td className="py-4 pr-4 text-right text-muted-foreground">{entry.totalDebates}</td>
-                            <td className="py-4 text-right text-muted-foreground">{entry.avgPointsPerDebate}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Performance Breakdown */}
-          <TabsContent value="breakdown">
-            <div className="grid gap-6 md:grid-cols-2">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Select Model</CardTitle>
+            {/* Main Leaderboard */}
+            <TabsContent value="leaderboard" className="animate-in fade-in slide-in-from-bottom-4 duration-500 outline-none">
+              <Card className="glass-panel border-none shadow-2xl rounded-[2.5rem] overflow-hidden">
+                <CardHeader className="p-8 pb-4 border-b border-white/5">
+                  <CardTitle className="flex items-center gap-3 text-xl font-black">
+                    <Medal className="h-6 w-6 text-amber-500" />
+                    {timeFilterLabels[timeFilter]} Global Ranking
+                  </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <Select value={selectedModel} onValueChange={setSelectedModel}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a model..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AI_MODELS.map((model) => (
-                        <SelectItem key={model.id} value={model.id}>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-2 h-2 rounded-full" 
-                              style={{ backgroundColor: model.color }}
-                            />
-                            {model.name}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <CardContent className="p-0">
+                  {isLoading ? (
+                    <div className="flex flex-col items-center justify-center py-20 gap-4">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary opacity-50" />
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Calculating Scores...</span>
+                    </div>
+                  ) : !leaderboard || leaderboard.length === 0 ? (
+                    <div className="py-20 text-center">
+                      <p className="text-muted-foreground italic">No historical data found for this period.</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="bg-white/5 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground border-b border-white/5">
+                            <th className="px-8 py-5 text-left">Pos</th>
+                            <th className="px-8 py-5 text-left">Persona / Model</th>
+                            <th className="px-8 py-5 text-right">ELO / Pts</th>
+                            <th className="px-8 py-5 text-right">Sessions</th>
+                            <th className="px-8 py-5 text-right">Efficiency</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                          {leaderboard.map((entry, idx) => {
+                            const model = AI_MODELS.find(m => m.id === entry.modelId);
+                            return (
+                              <tr key={entry.modelId} className="group hover:bg-white/[0.02] transition-colors">
+                                <td className="px-8 py-6">
+                                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-sm ${entry.rank === 1 ? "bg-amber-500/10 text-amber-500 border border-amber-500/20" :
+                                      entry.rank === 2 ? "bg-slate-300/10 text-slate-300 border border-slate-300/20" :
+                                        entry.rank === 3 ? "bg-amber-800/10 text-amber-800 border border-amber-800/20" :
+                                          "text-muted-foreground"
+                                    }`}>
+                                    {entry.rank}
+                                  </div>
+                                </td>
+                                <td className="px-8 py-6">
+                                  <div className="flex items-center gap-4">
+                                    <div className="text-3xl grayscale group-hover:grayscale-0 transition-all duration-300 scale-100 group-hover:scale-110">
+                                      {model?.icon || "🤖"}
+                                    </div>
+                                    <div>
+                                      <p className="font-bold text-lg group-hover:text-primary transition-colors">{entry.modelName}</p>
+                                      <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">{model?.id}</p>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-8 py-6 text-right font-black text-xl tabular-nums">{entry.totalPoints}</td>
+                                <td className="px-8 py-6 text-right font-bold text-slate-400 tabular-nums">{entry.totalDebates}</td>
+                                <td className="px-8 py-6 text-right">
+                                  <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-full text-xs font-black border border-emerald-500/20">
+                                    <TrendingUp className="h-3 w-3" />
+                                    {entry.avgPointsPerDebate} PPD
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
+            </TabsContent>
 
-              {modelStats && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <TrendingUp className="w-5 h-5" />
-                      Performance Breakdown
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-2 pb-3 border-b border-border">
-                      <div 
-                        className="w-4 h-4 rounded-full" 
-                        style={{ backgroundColor: modelStats.modelColor }}
-                      />
-                      <span className="font-bold text-lg">{modelStats.modelName}</span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-sm text-muted-foreground">Total Points</p>
-                        <p className="text-2xl font-bold">{modelStats.totalPoints}</p>
-                      </div>
-                      <div>
-                        <p className="text-sm text-muted-foreground">Debates</p>
-                        <p className="text-2xl font-bold">{modelStats.totalDebates}</p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-3 pt-2">
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-2 text-sm">
-                          <Target className="w-4 h-4 text-red-500" />
-                          Moderator Picks
-                        </span>
-                        <span className="font-medium">
-                          {modelStats.moderatorPicks} ({modelStats.moderatorPickRate}%)
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-2 text-sm">
-                          <Vote className="w-4 h-4 text-blue-500" />
-                          Total Peer Votes
-                        </span>
-                        <span className="font-medium">{modelStats.totalPeerVotes}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-2 text-sm">
-                          <Lightbulb className="w-4 h-4 text-yellow-500" />
-                          Strong Arguments
-                        </span>
-                        <span className="font-medium">{modelStats.strongArgumentMentions}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="flex items-center gap-2 text-sm">
-                          <Drama className="w-4 h-4 text-purple-500" />
-                          Devil's Advocate Wins
-                        </span>
-                        <span className="font-medium">{modelStats.devilsAdvocateWins}</span>
-                      </div>
-                    </div>
-
-                    <div className="pt-3 border-t border-border">
-                      <p className="text-sm text-muted-foreground">Recent Form</p>
-                      <p className="flex items-center gap-1 text-lg font-medium">
-                        <TrendingUp className="w-4 h-4 text-green-500" />
-                        +{modelStats.recentPoints} points (last 3 debates)
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </TabsContent>
-
-          {/* Head-to-Head */}
-          <TabsContent value="headtohead">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Swords className="w-5 h-5" />
-                  Head-to-Head Comparison
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <Select value={selectedModelA} onValueChange={setSelectedModelA}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select first model..." />
+            {/* Performance Breakdown */}
+            <TabsContent value="breakdown" className="animate-in fade-in slide-in-from-bottom-4 duration-500 outline-none">
+              <div className="grid gap-8 md:grid-cols-2">
+                <Card className="glass-panel border-none rounded-[2rem] p-8 space-y-6 self-start">
+                  <div className="space-y-2">
+                    <h3 className="text-xl font-black">Analytical <span className="text-primary italic">Deep Dive</span></h3>
+                    <p className="text-sm text-muted-foreground">Select a specific persona to evaluate their dialectic metrics.</p>
+                  </div>
+                  <Select value={selectedModel} onValueChange={setSelectedModel}>
+                    <SelectTrigger className="h-16 bg-background/50 border-white/5 rounded-2xl text-lg px-6">
+                      <SelectValue placeholder="Chose an AI Model..." />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="glass-panel border-white/10 rounded-2xl">
                       {AI_MODELS.map((model) => (
                         <SelectItem key={model.id} value={model.id}>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-2 h-2 rounded-full" 
-                              style={{ backgroundColor: model.color }}
-                            />
-                            {model.name}
+                          <div className="flex items-center gap-3">
+                            <span className="text-2xl">{model.icon}</span>
+                            <span className="font-bold">{model.name}</span>
                           </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
+                </Card>
 
-                  <Select value={selectedModelB} onValueChange={setSelectedModelB}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select second model..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AI_MODELS.filter(m => m.id !== selectedModelA).map((model) => (
-                        <SelectItem key={model.id} value={model.id}>
-                          <div className="flex items-center gap-2">
-                            <div 
-                              className="w-2 h-2 rounded-full" 
-                              style={{ backgroundColor: model.color }}
-                            />
-                            {model.name}
+                {modelStats ? (
+                  <Card className="glass-panel border-none rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-300">
+                    <CardHeader className="p-8 pb-4 bg-primary/5 border-b border-white/5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <span className="text-4xl">{AI_MODELS.find(m => m.id === modelStats.modelId)?.icon}</span>
+                          <div>
+                            <CardTitle className="text-2xl font-black">{modelStats.modelName}</CardTitle>
+                            <p className="text-[10px] font-black uppercase tracking-widest text-primary/60">Persona Profile</p>
                           </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-muted-foreground uppercase font-black tracking-widest">Global Rank</p>
+                          <p className="text-3xl font-black text-primary italic">#1</p>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="p-8 space-y-8">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="bg-white/5 p-6 rounded-3xl border border-white/5 space-y-1">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Total Score</p>
+                          <p className="text-3xl font-black tabular-nums">{modelStats.totalPoints}</p>
+                        </div>
+                        <div className="bg-white/5 p-6 rounded-3xl border border-white/5 space-y-1">
+                          <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Debate Limit</p>
+                          <p className="text-3xl font-black tabular-nums">{modelStats.totalDebates}</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between p-4 px-6 bg-background/40 rounded-2xl border border-white/5">
+                          <span className="flex items-center gap-3 text-sm font-bold">
+                            <Target className="w-5 h-5 text-red-500" />
+                            Moderator Pick Rate
+                          </span>
+                          <span className="font-black text-lg text-red-500">
+                            {modelStats.moderatorPickRate}%
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between p-4 px-6 bg-background/40 rounded-2xl border border-white/5">
+                          <span className="flex items-center gap-3 text-sm font-bold">
+                            <Vote className="w-5 h-5 text-blue-500" />
+                            Peer Consensus (Votes)
+                          </span>
+                          <span className="font-black text-lg text-blue-500">{modelStats.totalPeerVotes}</span>
+                        </div>
+                        <div className="flex items-center justify-between p-4 px-6 bg-background/40 rounded-2xl border border-white/5">
+                          <span className="flex items-center gap-3 text-sm font-bold">
+                            <Lightbulb className="w-5 h-5 text-yellow-500" />
+                            Strong Arguments
+                          </span>
+                          <span className="font-black text-lg text-yellow-500">{modelStats.strongArgumentMentions}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="glass-panel rounded-[2.5rem] border-dashed border-white/10 flex flex-col items-center justify-center p-20 text-center space-y-4">
+                    <Activity className="h-12 w-12 text-muted-foreground opacity-20" />
+                    <p className="text-sm text-muted-foreground italic">Select a model to view detailed performance metrics.</p>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Head-to-Head */}
+            <TabsContent value="headtohead" className="animate-in fade-in slide-in-from-bottom-4 duration-500 outline-none">
+              <Card className="glass-panel border-none shadow-2xl rounded-[3rem] p-10">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-12">
+                  {/* Model A */}
+                  <div className="flex-1 w-full space-y-6 text-center">
+                    <div className="relative group mx-auto w-32 h-32">
+                      <div className="absolute inset-0 bg-primary/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className="relative w-full h-full bg-background/50 backdrop-blur-3xl border border-white/10 rounded-full flex items-center justify-center text-6xl shadow-2xl">
+                        {AI_MODELS.find(m => m.id === selectedModelA)?.icon || "❔"}
+                      </div>
+                    </div>
+                    <Select value={selectedModelA} onValueChange={setSelectedModelA}>
+                      <SelectTrigger className="h-12 bg-white/5 border-white/5 rounded-xl font-bold">
+                        <SelectValue placeholder="Select Challenger" />
+                      </SelectTrigger>
+                      <SelectContent className="glass-panel border-white/10 rounded-xl">
+                        {AI_MODELS.map((model) => (
+                          <SelectItem key={model.id} value={model.id}>{model.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center">
+                      <Swords className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground">VERSUS</span>
+                  </div>
+
+                  {/* Model B */}
+                  <div className="flex-1 w-full space-y-6 text-center">
+                    <div className="relative group mx-auto w-32 h-32">
+                      <div className="absolute inset-0 bg-secondary/20 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className="relative w-full h-full bg-background/50 backdrop-blur-3xl border border-white/10 rounded-full flex items-center justify-center text-6xl shadow-2xl">
+                        {AI_MODELS.find(m => m.id === selectedModelB)?.icon || "❔"}
+                      </div>
+                    </div>
+                    <Select value={selectedModelB} onValueChange={setSelectedModelB}>
+                      <SelectTrigger className="h-12 bg-white/5 border-white/5 rounded-xl font-bold">
+                        <SelectValue placeholder="Select Rival" />
+                      </SelectTrigger>
+                      <SelectContent className="glass-panel border-white/10 rounded-xl">
+                        {AI_MODELS.filter(m => m.id !== selectedModelA).map((model) => (
+                          <SelectItem key={model.id} value={model.id}>{model.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 {headToHead && headToHead.debatesTogether > 0 ? (
-                  <div className="space-y-6">
-                    <div className="text-center py-4 bg-muted/30 rounded-lg">
-                      <p className="text-sm text-muted-foreground">Debates Together</p>
-                      <p className="text-3xl font-bold">{headToHead.debatesTogether}</p>
+                  <div className="mt-16 space-y-10 animate-in fade-in zoom-in-95 duration-500">
+                    <div className="text-center space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Direct Engagements</p>
+                      <p className="text-5xl font-black text-primary italic tabular-nums">{headToHead.debatesTogether}</p>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                      <div>
-                        <div 
-                          className="w-4 h-4 rounded-full mx-auto mb-2" 
-                          style={{ backgroundColor: headToHead.modelA.color }}
-                        />
-                        <p className="font-medium text-sm">{headToHead.modelA.name}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                      <div className="bg-white/5 p-8 rounded-[2rem] border border-white/5 flex flex-col items-center justify-center gap-4 text-center">
+                        <Target className="h-8 w-8 text-red-500" />
+                        <div className="flex items-center gap-6">
+                          <span className="text-3xl font-black tabular-nums">{headToHead.modelA.moderatorPicks}</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">MODERATOR<br />PICKS</span>
+                          <span className="text-3xl font-black tabular-nums">{headToHead.modelB.moderatorPicks}</span>
+                        </div>
                       </div>
-                      <div className="text-muted-foreground text-sm pt-6">vs</div>
-                      <div>
-                        <div 
-                          className="w-4 h-4 rounded-full mx-auto mb-2" 
-                          style={{ backgroundColor: headToHead.modelB.color }}
-                        />
-                        <p className="font-medium text-sm">{headToHead.modelB.name}</p>
+                      <div className="bg-white/5 p-8 rounded-[2rem] border border-white/5 flex flex-col items-center justify-center gap-4 text-center">
+                        <Vote className="h-8 w-8 text-blue-500" />
+                        <div className="flex items-center gap-6">
+                          <span className="text-3xl font-black tabular-nums">{headToHead.modelA.peerVotes}</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">PEER<br />VOTES</span>
+                          <span className="text-3xl font-black tabular-nums">{headToHead.modelB.peerVotes}</span>
+                        </div>
                       </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between py-3 border-b border-border">
-                        <span className="font-bold text-lg">{headToHead.modelA.moderatorPicks}</span>
-                        <span className="text-sm text-muted-foreground">Moderator Picks</span>
-                        <span className="font-bold text-lg">{headToHead.modelB.moderatorPicks}</span>
-                      </div>
-                      <div className="flex items-center justify-between py-3 border-b border-border">
-                        <span className="font-bold text-lg">{headToHead.modelA.peerVotes}</span>
-                        <span className="text-sm text-muted-foreground">Peer Votes</span>
-                        <span className="font-bold text-lg">{headToHead.modelB.peerVotes}</span>
-                      </div>
-                      <div className="flex items-center justify-between py-3">
-                        <span className="font-bold text-lg">{headToHead.modelA.totalPoints}</span>
-                        <span className="text-sm text-muted-foreground">Total Points</span>
-                        <span className="font-bold text-lg">{headToHead.modelB.totalPoints}</span>
+                      <div className="bg-white/5 p-8 rounded-[2rem] border border-white/5 flex flex-col items-center justify-center gap-4 text-center">
+                        <Award className="h-8 w-8 text-amber-500" />
+                        <div className="flex items-center gap-6">
+                          <span className="text-3xl font-black tabular-nums">{headToHead.modelA.totalPoints}</span>
+                          <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">TOTAL<br />POINTS</span>
+                          <span className="text-3xl font-black tabular-nums">{headToHead.modelB.totalPoints}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ) : selectedModelA && selectedModelB && selectedModelA !== selectedModelB ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    These models haven't debated together yet
                   </div>
                 ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    Select two different models to compare
+                  <div className="mt-16 text-center py-10 border-t border-white/5">
+                    <p className="text-sm text-muted-foreground italic">
+                      {selectedModelA && selectedModelB
+                        ? "These analytical entities have not yet intersected in the dialectic arena."
+                        : "Select two distinct personas to generate a comparative analysis."}
+                    </p>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </main>
-    </div>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </div>
+    </DashboardLayout>
   );
 }
