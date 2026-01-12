@@ -107,6 +107,7 @@ export const PROVIDER_COLORS: Record<string, string> = {
   nvidia: "#76B900",
   minimax: "#F97316",
   perplexity: "#22D3EE",
+  xiaomi: "#FF4A00",
   default: "#6B7280",
 };
 
@@ -126,6 +127,7 @@ export const PROVIDER_ICONS: Record<string, string> = {
   nvidia: "💚",
   minimax: "🎯",
   perplexity: "🔍",
+  xiaomi: "📱",
   default: "🤖",
 };
 
@@ -163,7 +165,7 @@ export interface OpenRouterModelsResponse {
 export function openRouterToAIModel(orModel: OpenRouterModel): AIModel {
   const provider = orModel.id.split("/")[0] || "unknown";
   const supportsImages = orModel.architecture?.input_modalities?.includes("image") || false;
-  
+
   return {
     id: orModel.id.replace(/\//g, "-").replace(/:/g, "-"),
     name: orModel.name,
@@ -183,17 +185,17 @@ export const getModelById = (id: string): AIModel | undefined => {
   // Check leader models by internal ID first
   const leaderById = LEADER_MODELS.find((m) => m.id === id);
   if (leaderById) return leaderById;
-  
+
   // Check leader models by OpenRouter ID (e.g., "anthropic/claude-sonnet-4.5")
   const leaderByOpenRouterId = LEADER_MODELS.find((m) => m.openRouterId === id);
   if (leaderByOpenRouterId) return leaderByOpenRouterId;
-  
+
   // For dynamic models, handle OpenRouter ID format (provider/model-name)
   if (id.includes('/')) {
     const [provider, ...modelParts] = id.split('/');
     const modelName = modelParts.join('/');
     const openRouterId = id.replace(/:free$/, ':free'); // Keep :free suffix
-    
+
     return {
       id: id.replace(/\//g, '-').replace(/:free$/, '-free'),
       name: modelName.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ').replace(':Free', ' (Free)'),
@@ -207,15 +209,15 @@ export const getModelById = (id: string): AIModel | undefined => {
       isLeader: false,
     };
   }
-  
+
   // For internal ID format (provider-model-name), reconstruct OpenRouter ID
   const parts = id.split('-');
   if (parts.length < 2) return undefined;
-  
+
   const provider = parts[0];
   const modelName = parts.slice(1).join('-');
   const openRouterId = `${provider}/${modelName}`.replace(/-free$/, ':free');
-  
+
   // Create a dynamic model object
   return {
     id,

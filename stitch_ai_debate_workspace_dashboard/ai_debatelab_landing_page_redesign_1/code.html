@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html class="scroll-smooth" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI DebateLab - Compare, Contrast, Conquer</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        primary: "#3b82f6", // Vibrant Blue
+                        secondary: "#a855f7", // Purple Accent
+                        "background-light": "#f8fafc",
+                        "background-dark": "#020617",
+                    },
+                    fontFamily: {
+                        display: ["Plus Jakarta Sans", "sans-serif"],
+                        mono: ["JetBrains Mono", "monospace"],
+                    },
+                    borderRadius: {
+                        DEFAULT: "1rem",
+                        'xl': '1.5rem',
+                        '2xl': '2rem',
+                    },
+                },
+            },
+        };
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .dark .glass-panel {
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .neon-glow {
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.2);
+        }
+        .neon-border {
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        .input-glow:focus-within {
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.15);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display transition-colors duration-300">
+<nav class="fixed top-0 w-full z-50 glass-panel border-b border-slate-200 dark:border-slate-800">
+<div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined font-bold">query_stats</span>
+</div>
+<span class="text-xl font-extrabold tracking-tight">Debate<span class="text-primary">Lab</span></span>
+</div>
+<div class="hidden md:flex items-center gap-8 text-sm font-medium">
+<a class="hover:text-primary transition-colors" href="#features">Features</a>
+<a class="hover:text-primary transition-colors" href="#models">AI Models</a>
+<a class="hover:text-primary transition-colors" href="#how-it-works">Process</a>
+<a class="hover:text-primary transition-colors" href="#logo-concepts">Logos</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors" onclick="toggleDarkMode()">
+<span class="material-symbols-outlined block dark:hidden">dark_mode</span>
+<span class="material-symbols-outlined hidden dark:block">light_mode</span>
+</button>
+<button class="bg-primary hover:bg-blue-600 text-white px-6 py-2.5 rounded-full font-semibold transition-all shadow-lg shadow-primary/25">
+                    Sign In
+                </button>
+</div>
+</div>
+</nav>
+<main class="pt-20">
+<section class="relative min-h-[90vh] flex flex-col items-center justify-center px-6 overflow-hidden">
+<div class="absolute top-1/4 -left-20 w-96 h-96 bg-primary/20 rounded-full blur-[120px] -z-10 animate-pulse"></div>
+<div class="absolute bottom-1/4 -right-20 w-96 h-96 bg-secondary/20 rounded-full blur-[120px] -z-10 animate-pulse delay-700"></div>
+<div class="text-center mb-12">
+<h1 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-6">
+                    Start a new 
+                    <span class="inline-flex items-center bg-slate-200/50 dark:bg-slate-800/50 p-1 rounded-2xl border border-slate-300 dark:border-slate-700 mx-2">
+<button class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors hover:bg-white dark:hover:bg-slate-700">
+<span class="material-symbols-outlined text-base">smartphone</span> App
+                        </button>
+<button class="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-slate-700 shadow-sm transition-colors">
+<span class="material-symbols-outlined text-base">web</span> Web
+                        </button>
+</span>
+                    debate
+                </h1>
+<p class="text-slate-500 dark:text-slate-400 text-lg md:text-xl max-w-2xl mx-auto">
+                    Get practical answers from multiple AI perspectives. Ask a question, pick your AI panel, and get actionable insights.
+                </p>
+</div>
+<div class="w-full max-w-4xl relative group">
+<div class="absolute -inset-1 bg-gradient-to-r from-primary to-secondary rounded-2xl blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+<div class="relative bg-white dark:bg-[#0f172a] border border-slate-200 dark:border-slate-800 rounded-2xl p-6 shadow-2xl input-glow transition-all">
+<div class="space-y-4 mb-12">
+<div class="flex items-start gap-3">
+<span class="text-slate-400 dark:text-slate-600 font-mono">-</span>
+<p class="text-slate-700 dark:text-slate-300"><strong class="text-slate-900 dark:text-white">Researchers</strong> comparing AI model capabilities and reasoning approaches</p>
+</div>
+<div class="flex items-start gap-3">
+<span class="text-slate-400 dark:text-slate-600 font-mono">-</span>
+<p class="text-slate-700 dark:text-slate-300"><strong class="text-slate-900 dark:text-white">Educators</strong> demonstrating different viewpoints on complex topics</p>
+</div>
+<div class="flex items-start gap-3">
+<span class="text-slate-400 dark:text-slate-600 font-mono">-</span>
+<p class="text-slate-700 dark:text-slate-300"><strong class="text-slate-900 dark:text-white">Curious Minds</strong> wanting to explore ideas through AI-powered discourse</p>
+</div>
+<div class="mt-8 pt-4 border-t border-slate-100 dark:border-slate-800">
+<h3 class="text-slate-400 dark:text-slate-500 text-sm font-mono uppercase tracking-widest mb-2">Value Proposition</h3>
+<blockquote class="text-xl font-medium text-slate-800 dark:text-slate-200 italic border-l-4 border-primary pl-4">
+                                "Get practical answers from multiple AI perspectives. Ask a question, pick your AI panel, and get actionable insights."
+                            </blockquote>
+</div>
+</div>
+<div class="flex items-center justify-between">
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+<span class="material-symbols-outlined text-slate-500 dark:text-slate-400">add</span>
+</button>
+<div class="flex items-center gap-3">
+<div class="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/80 px-4 py-2 rounded-full border border-slate-200 dark:border-slate-700">
+<span class="material-symbols-outlined text-primary animate-pulse text-lg">auto_awesome</span>
+<span class="text-sm font-medium dark:text-slate-300">3.0 Flash</span>
+<span class="material-symbols-outlined text-sm text-slate-400">expand_more</span>
+</div>
+<button class="bg-primary w-12 h-12 flex items-center justify-center rounded-full text-white shadow-lg shadow-primary/30 hover:scale-105 transition-transform">
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="py-24 px-6 bg-slate-50/50 dark:bg-slate-900/30" id="models">
+<div class="max-w-7xl mx-auto">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
+<div class="max-w-xl">
+<span class="text-primary font-bold uppercase tracking-widest text-sm">Diverse Perspectives</span>
+<h2 class="text-4xl font-extrabold mt-2 mb-4">Pick your AI Panel</h2>
+<p class="text-slate-600 dark:text-slate-400">Construct a debate between the world's most powerful language models. Compare reasoning, bias, and creative outputs side-by-side.</p>
+</div>
+<button class="text-primary font-bold flex items-center gap-2 hover:gap-3 transition-all">
+                        View all models <span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<div class="group bg-white dark:bg-slate-800/50 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 transition-all hover:-translate-y-1 shadow-sm">
+<div class="w-14 h-14 bg-emerald-100 dark:bg-emerald-500/10 rounded-2xl flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-emerald-600 dark:text-emerald-400 text-3xl">token</span>
+</div>
+<h3 class="text-xl font-bold mb-2">GPT-4o</h3>
+<p class="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6">The industry leader in general reasoning and creative problem solving.</p>
+<button class="w-full py-2 bg-slate-100 dark:bg-slate-700/50 rounded-xl text-sm font-semibold group-hover:bg-primary group-hover:text-white transition-colors">Select Model</button>
+</div>
+<div class="group bg-white dark:bg-slate-800/50 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 transition-all hover:-translate-y-1 shadow-sm">
+<div class="w-14 h-14 bg-orange-100 dark:bg-orange-500/10 rounded-2xl flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-orange-600 dark:text-orange-400 text-3xl">history_edu</span>
+</div>
+<h3 class="text-xl font-bold mb-2">Claude 3.5 Sonnet</h3>
+<p class="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6">Unrivaled nuance and safety. Perfect for ethical and philosophical debates.</p>
+<button class="w-full py-2 bg-slate-100 dark:bg-slate-700/50 rounded-xl text-sm font-semibold group-hover:bg-primary group-hover:text-white transition-colors">Select Model</button>
+</div>
+<div class="group bg-white dark:bg-slate-800/50 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 transition-all hover:-translate-y-1 shadow-sm">
+<div class="w-14 h-14 bg-blue-100 dark:bg-blue-500/10 rounded-2xl flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-blue-600 dark:text-blue-400 text-3xl">google</span>
+</div>
+<h3 class="text-xl font-bold mb-2">Gemini 1.5 Pro</h3>
+<p class="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6">Google's powerhouse with massive context windows for deep analysis.</p>
+<button class="w-full py-2 bg-slate-100 dark:bg-slate-700/50 rounded-xl text-sm font-semibold group-hover:bg-primary group-hover:text-white transition-colors">Select Model</button>
+</div>
+<div class="group bg-white dark:bg-slate-800/50 p-8 rounded-3xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 transition-all hover:-translate-y-1 shadow-sm">
+<div class="w-14 h-14 bg-indigo-100 dark:bg-indigo-500/10 rounded-2xl flex items-center justify-center mb-6">
+<span class="material-symbols-outlined text-indigo-600 dark:text-indigo-400 text-3xl">psychology_alt</span>
+</div>
+<h3 class="text-xl font-bold mb-2">Llama 3.1</h3>
+<p class="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-6">Meta's state-of-the-art open model with unparalleled efficiency.</p>
+<button class="w-full py-2 bg-slate-100 dark:bg-slate-700/50 rounded-xl text-sm font-semibold group-hover:bg-primary group-hover:text-white transition-colors">Select Model</button>
+</div>
+</div>
+</div>
+</section>
+<section class="py-24 px-6 overflow-hidden" id="how-it-works">
+<div class="max-w-7xl mx-auto">
+<div class="text-center mb-20">
+<h2 class="text-4xl font-extrabold mb-4">How it Works</h2>
+<p class="text-slate-500 dark:text-slate-400 max-w-2xl mx-auto">From prompt to comprehensive analysis in three simple steps.</p>
+</div>
+<div class="relative">
+<div class="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-slate-200 dark:bg-slate-800 -z-10"></div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+<div class="bg-white dark:bg-slate-900 p-8 rounded-3xl text-center flex flex-col items-center border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none">
+<div class="w-16 h-16 bg-primary text-white rounded-2xl flex items-center justify-center text-2xl font-bold mb-6">1</div>
+<h4 class="text-xl font-bold mb-3">Define the Prompt</h4>
+<p class="text-slate-500 dark:text-slate-400 text-sm">Enter your query or debate topic. Use our rich-text editor for complex parameters.</p>
+</div>
+<div class="bg-white dark:bg-slate-900 p-8 rounded-3xl text-center flex flex-col items-center border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none">
+<div class="w-16 h-16 bg-primary text-white rounded-2xl flex items-center justify-center text-2xl font-bold mb-6">2</div>
+<h4 class="text-xl font-bold mb-3">Select your Panel</h4>
+<p class="text-slate-500 dark:text-slate-400 text-sm">Pick up to 4 models to debate. Adjust temperature and reasoning levels for each.</p>
+</div>
+<div class="bg-white dark:bg-slate-900 p-8 rounded-3xl text-center flex flex-col items-center border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-200/20 dark:shadow-none">
+<div class="w-16 h-16 bg-primary text-white rounded-2xl flex items-center justify-center text-2xl font-bold mb-6">3</div>
+<h4 class="text-xl font-bold mb-3">Analyze Results</h4>
+<p class="text-slate-500 dark:text-slate-400 text-sm">Watch the models interact and use our comparison matrix to score their accuracy.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="py-24 px-6 bg-slate-100 dark:bg-slate-900/50" id="logo-concepts">
+<div class="max-w-7xl mx-auto">
+<div class="mb-16">
+<h2 class="text-3xl font-extrabold mb-4">Brand Identity Concepts</h2>
+<p class="text-slate-600 dark:text-slate-400">Minimalist, tech-forward explorations for the DebateLab brand.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<div class="bg-white dark:bg-slate-800 p-10 rounded-3xl border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center space-y-6">
+<div class="relative w-24 h-24">
+<div class="absolute inset-0 bg-primary/20 rounded-lg rotate-12"></div>
+<div class="absolute inset-0 bg-primary rounded-lg flex items-center justify-center">
+<div class="grid grid-cols-2 gap-1 w-8 h-8">
+<div class="w-3 h-3 bg-white rounded-sm"></div>
+<div class="w-3 h-3 border-2 border-white rounded-sm"></div>
+<div class="w-3 h-3 border-2 border-white rounded-sm"></div>
+<div class="w-3 h-3 bg-white rounded-sm"></div>
+</div>
+</div>
+</div>
+<div class="text-center">
+<span class="font-bold text-lg block">Concept A: The Matrix</span>
+<span class="text-sm text-slate-500">Represents comparison &amp; structure</span>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-800 p-10 rounded-3xl border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center space-y-6">
+<div class="w-24 h-24 bg-gradient-to-br from-primary to-secondary rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-5xl">auto_awesome</span>
+</div>
+<div class="text-center">
+<span class="font-bold text-lg block">Concept B: The Spark</span>
+<span class="text-sm text-slate-500">Represents intelligence &amp; creation</span>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-800 p-10 rounded-3xl border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center space-y-6">
+<div class="w-24 h-24 border-4 border-slate-200 dark:border-slate-700 rounded-full flex items-center justify-center">
+<div class="w-16 h-16 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-4xl">analytics</span>
+</div>
+</div>
+<div class="text-center">
+<span class="font-bold text-lg block">Concept C: The Pulse</span>
+<span class="text-sm text-slate-500">Represents data-driven insights</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+</main>
+<footer class="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 py-20 px-6">
+<div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
+<div class="col-span-1 md:col-span-1">
+<div class="flex items-center gap-2 mb-6">
+<div class="w-8 h-8 bg-primary rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined text-sm font-bold">query_stats</span>
+</div>
+<span class="text-lg font-extrabold tracking-tight">Debate<span class="text-primary">Lab</span></span>
+</div>
+<p class="text-slate-500 dark:text-slate-400 text-sm">The world's first multi-agent LLM debate platform for deep reasoning and comparative analysis.</p>
+</div>
+<div>
+<h5 class="font-bold mb-6">Product</h5>
+<ul class="space-y-4 text-sm text-slate-500 dark:text-slate-400">
+<li><a class="hover:text-primary transition-colors" href="#">Debate Engine</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">API Access</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Benchmarks</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Model Rankings</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-bold mb-6">Company</h5>
+<ul class="space-y-4 text-sm text-slate-500 dark:text-slate-400">
+<li><a class="hover:text-primary transition-colors" href="#">About Us</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Careers</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Privacy Policy</a></li>
+<li><a class="hover:text-primary transition-colors" href="#">Terms of Service</a></li>
+</ul>
+</div>
+<div>
+<h5 class="font-bold mb-6">Newsletter</h5>
+<p class="text-sm text-slate-500 dark:text-slate-400 mb-4">Get the latest on AI models and debate insights.</p>
+<div class="flex gap-2">
+<input class="bg-slate-100 dark:bg-slate-800 border-0 rounded-xl px-4 py-2 text-sm w-full focus:ring-2 focus:ring-primary" placeholder="Email address" type="email"/>
+<button class="bg-primary text-white p-2 rounded-xl">
+<span class="material-symbols-outlined">send</span>
+</button>
+</div>
+</div>
+</div>
+<div class="max-w-7xl mx-auto mt-20 pt-8 border-t border-slate-100 dark:border-slate-900 text-center text-slate-400 text-xs">
+            © 2024 AI DebateLab. All rights reserved. Built for the future of reasoning.
+        </div>
+</footer>
+
+</body></html>

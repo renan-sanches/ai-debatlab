@@ -30,7 +30,7 @@ import { Button } from "./ui/button";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-  { icon: Users, label: "Library", path: "/library" },
+  { icon: Users, label: "History", path: "/library" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
@@ -155,20 +155,25 @@ function DashboardLayoutContent({
   return (
     <div className="flex flex-col min-h-screen w-full">
       {/* Premium Header */}
-      <header className="h-16 border-b border-border glass-panel flex items-center justify-between px-6 sticky top-0 z-50">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold italic shadow-lg shadow-blue-900/20">DL</div>
-          <h1 className="font-bold text-xl tracking-tight hidden md:block">AI DebateLab</h1>
+      <header className="h-20 border-b border-slate-200 dark:border-slate-800 glass-panel flex items-center justify-between px-6 sticky top-0 z-[60]">
+        <div className="flex items-center gap-2">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
+            <span className="material-symbols-outlined font-bold text-lg">query_stats</span>
+          </div>
+          <span className="text-xl font-extrabold tracking-tight dark:text-white hidden sm:block">
+            Debate<span className="text-primary">Lab</span>
+          </span>
         </div>
 
         <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center bg-muted/50 rounded-full px-4 py-1.5 text-sm font-medium border border-border">
-            <span className="text-muted-foreground mr-2">Status:</span>
+          <div className="hidden md:flex items-center bg-slate-100 dark:bg-slate-800/50 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest border border-slate-200 dark:border-slate-700/50">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse mr-2"></span>
+            <span className="text-slate-500 dark:text-slate-400 mr-2 uppercase">Status:</span>
             <span className="text-primary">Ready</span>
           </div>
 
           <button
-            className="p-2 rounded-full hover:bg-accent transition-colors text-muted-foreground"
+            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300"
             onClick={toggleTheme}
           >
             {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
@@ -176,24 +181,25 @@ function DashboardLayoutContent({
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-2 rounded-full p-1 border border-border hover:bg-accent transition-colors">
-                <Avatar className="h-7 w-7 border">
-                  <AvatarFallback className="text-[10px] font-medium">
+              <button className="flex items-center gap-3 rounded-full pl-1 pr-4 py-1 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+                <Avatar className="h-8 w-8 border border-white dark:border-slate-700">
+                  <AvatarFallback className="text-[10px] font-bold bg-primary text-white">
                     {user?.name?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <div className="pr-1 hidden sm:block">
-                  <p className="text-xs font-semibold leading-none">{user?.name || "User"}</p>
+                <div className="hidden sm:block text-left">
+                  <p className="text-xs font-bold leading-none text-slate-900 dark:text-white">{user?.name || "User"}</p>
+                  <p className="text-[10px] font-medium text-slate-500 mt-0.5">Premium Plan</p>
                 </div>
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
               <DropdownMenuItem
                 onClick={logout}
-                className="cursor-pointer text-destructive focus:text-destructive"
+                className="cursor-pointer text-destructive focus:text-destructive rounded-xl p-3"
               >
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Sign out</span>
+                <LogOut className="mr-3 h-4 w-4" />
+                <span className="font-bold text-sm">Sign out</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

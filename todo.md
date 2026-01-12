@@ -148,3 +148,7 @@
 
 ## Refactoring UI Consistency
 - [x] Update UI font to Plus Jakarta Sans
+- [x] Redesign Home page with premium glassmorphism
+- [x] Redesign History page with high-fidelity cards
+- [x] Redesign Leaderboard with elite rankings and head-to-head arena
+- [x] Redesign Debate workspace with side-by-side analysis and participant sidebar

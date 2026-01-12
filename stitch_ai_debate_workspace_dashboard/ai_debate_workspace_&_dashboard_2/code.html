@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI DebateLab | Multi-Model Comparative Workspace</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#3b82f6",
+              "background-light": "#f8fafc",
+              "background-dark": "#0B0E14", 
+              "surface-dark": "#151921",
+              "surface-dark-lighter": "#1E232E",
+              "border-dark": "#2A303C",
+            },
+            fontFamily: {
+              display: ["Inter", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.75rem",
+            },
+            backgroundImage: {
+               'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+               'subtle-grain': 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 400 400\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\' opacity=\'0.05\'/%3E%3C/svg%3E")',
+            }
+          },
+        },
+      };
+      function toggleDarkMode() {
+        document.documentElement.classList.toggle('dark');
+      }
+    </script>
+<style>
+        .active-speaker {
+            box-shadow: 0 10px 30px -5px rgba(59, 130, 246, 0.3);
+            border-color: #3b82f6 !important;
+            background: linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+            position: relative;
+            z-index: 10;
+        }
+        .dark .active-speaker {
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.15);
+            background: linear-gradient(to bottom right, #151921, #0f131a);
+        }
+        .premium-bg {
+            background-color: #f8fafc;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(214, 100%, 93%, 0.4) 0, transparent 50%), 
+                radial-gradient(at 100% 100%, hsla(210, 100%, 96%, 0.5) 0, transparent 50%);
+        }
+        .dark .premium-bg {
+            background-color: #0B0E14;
+            background-image: radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,0.1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,0.1) 0, transparent 50%);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #2A303C;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-200 font-display min-h-screen flex flex-col transition-colors duration-300">
+<header class="h-16 border-b border-slate-200 dark:border-border-dark flex items-center justify-between px-6 bg-white/90 dark:bg-[#0B0E14]/80 backdrop-blur-md sticky top-0 z-50">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold italic shadow-lg shadow-blue-600/20">DL</div>
+<h1 class="font-bold text-xl tracking-tight hidden md:block text-slate-900 dark:text-white">AI DebateLab</h1>
+</div>
+<div class="flex items-center gap-4">
+<div class="hidden sm:flex items-center bg-slate-100 dark:bg-surface-dark-lighter rounded-full px-4 py-1.5 text-sm font-medium border border-slate-200 dark:border-border-dark">
+<span class="text-slate-500 mr-2">Session:</span>
+<span class="text-blue-600 dark:text-blue-400">Ethical Implications of AGI</span>
+</div>
+<button class="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-surface-dark-lighter transition-colors text-slate-500 dark:text-slate-400" onclick="toggleDarkMode()">
+<span class="material-symbols-rounded">dark_mode</span>
+</button>
+<div class="h-8 w-8 rounded-full bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center text-xs font-bold text-white shadow-md border border-white/10">JD</div>
+</div>
+</header>
+<div class="flex flex-1 overflow-hidden">
+<aside class="w-72 border-r border-slate-200 dark:border-border-dark hidden lg:flex flex-col p-4 bg-white dark:bg-[#0E1117] shadow-[4px_0_24px_-12px_rgba(0,0,0,0.05)] z-10">
+<div class="mb-8">
+<button class="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-600/20 border border-blue-500/20 active:scale-[0.98]">
+<span class="material-symbols-rounded">add</span>
+                    New Debate
+                </button>
+</div>
+<div class="flex-1 overflow-y-auto custom-scrollbar space-y-6">
+<div>
+<div class="flex items-center justify-between mb-3 px-2">
+<h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Participants</h3>
+<button class="text-blue-600 dark:text-blue-400 text-xs hover:underline">Manage</button>
+</div>
+<div class="space-y-2">
+<div class="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-surface-dark border border-slate-200 dark:border-border-dark hover:border-slate-300 dark:hover:border-slate-600 transition-colors group cursor-pointer">
+<img alt="GPT-4 Avatar" class="w-9 h-9 rounded-lg bg-white dark:bg-slate-800 object-cover shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_38z-8h-TTPnLrtL93jGy2IyJ0jn9WQXGPQFoLxvJDCq5YZVnoLcxEcNdId__ii-AEciqjJMmmS1JwSWNmyQx4W-BmLDutFWSCmoFFLUedmV9iJlqalQf-cxSWxejf_CSeGrC3O0EkewuOq810gmkWyVA-KRJIsmoT7PQXt7OY6JLonkEhyICKsmo8IeCEU8_1jSYdfjubl7URbJggW2q-ztNrjUgGbwXnzfRO0xfvj_t9Z2UH2Ro0IQEEIwqWqi03A1A24cQjlmQ"/>
+<div class="flex-1">
+<p class="text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 transition-colors">GPT-4 Omni</p>
+<div class="flex items-center gap-1.5">
+<div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+<p class="text-[10px] text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Active</p>
+</div>
+</div>
+<button class="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
+<span class="material-symbols-rounded text-slate-400 text-sm">settings</span>
+</button>
+</div>
+<div class="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-surface-dark border border-slate-200 dark:border-border-dark hover:border-slate-300 dark:hover:border-slate-600 transition-colors group cursor-pointer">
+<img alt="Claude Avatar" class="w-9 h-9 rounded-lg bg-white dark:bg-slate-800 object-cover shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBsUJG18pv_JyryLP8CN3kFy8q8A5rFB8qe8_I_WS5eTsNOTAnAkefEN2N5Z1AKhxFUGkMt22Mewrxj_vAMuWLaolyg_TCu0a5FhIsrtcKnWzdb0pCkX609ztnZnxPmiheizygBelezwUwGzlqXhWfR2_iqlSfT8-2PJZOMThcTZH2VEThvx0nJM4nE0i64QPwEC1NrZ8AkPb6TNCw6uN0mpyKhgg-rb_ACywvZf3r4IZQg0ikMgGgEMMysfGNVP0-XOuNfoHyoWr-o"/>
+<div class="flex-1">
+<p class="text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 transition-colors">Claude 3.5 Sonnet</p>
+<div class="flex items-center gap-1.5">
+<div class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+<p class="text-[10px] text-green-600 dark:text-green-400 font-medium uppercase tracking-wide">Active</p>
+</div>
+</div>
+<button class="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
+<span class="material-symbols-rounded text-slate-400 text-sm">settings</span>
+</button>
+</div>
+<div class="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-surface-dark border border-slate-200 dark:border-border-dark hover:border-slate-300 dark:hover:border-slate-600 transition-colors group cursor-pointer">
+<img alt="Gemini Avatar" class="w-9 h-9 rounded-lg bg-white dark:bg-slate-800 object-cover shadow-sm" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUpqrdOCj1s-_X_d5Yz13RwUDd1QcYE0iRkzBirEl5DsCKdvWu_rYeMpjjF5hR4eU2gkhVuQC0PAjfExlfH2wGUEhaPHDFOCTbgLKrm9XtESlCZHumbNkihg_-fbjFhKDBDKqLWeYYIfPz7eJy88buAeiNym3tOtAn_27g2VoqkFjKIo5JLhDE7AAjLwSOS4Ps5Im7o-S3azVTG6ZcwOV4-r-71UaV_YY2UloWicenmcBfjrej_Lkjg4KFM7h33OZM218DTxTZ0pmR"/>
+<div class="flex-1">
+<p class="text-sm font-semibold text-slate-800 dark:text-slate-200 group-hover:text-blue-600 transition-colors">Gemini 1.5 Pro</p>
+<div class="flex items-center gap-1.5">
+<div class="w-1.5 h-1.5 rounded-full bg-slate-400"></div>
+<p class="text-[10px] text-slate-500 font-medium uppercase italic tracking-wide">Waiting</p>
+</div>
+</div>
+<button class="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
+<span class="material-symbols-rounded text-slate-400 text-sm">settings</span>
+</button>
+</div>
+</div>
+</div>
+<div>
+<h3 class="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3 px-2">Moderation</h3>
+<div class="bg-slate-50 dark:bg-surface-dark rounded-xl p-4 border border-slate-200 dark:border-border-dark space-y-4">
+<div class="flex items-center justify-between">
+<span class="text-sm text-slate-600 dark:text-slate-300">Turn Limit</span>
+<span class="text-xs font-mono bg-white dark:bg-surface-dark-lighter dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded-md shadow-sm">10</span>
+</div>
+<div class="flex items-center justify-between">
+<span class="text-sm text-slate-600 dark:text-slate-300">Response Time</span>
+<span class="text-xs font-mono bg-white dark:bg-surface-dark-lighter dark:text-slate-300 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded-md shadow-sm">Fast</span>
+</div>
+<button class="w-full text-xs font-bold uppercase tracking-wide border border-red-500/20 text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-500 dark:bg-transparent dark:hover:bg-red-500/10 py-2.5 rounded-lg transition-colors">
+                            End Session
+                        </button>
+</div>
+</div>
+</div>
+</aside>
+<main class="flex-1 overflow-y-auto custom-scrollbar p-6 bg-slate-50 dark:bg-[#0B0E14] premium-bg">
+<div class="max-w-6xl mx-auto space-y-6">
+<div class="flex items-center justify-between bg-white dark:bg-[#151921] p-5 rounded-2xl border border-slate-200 dark:border-border-dark shadow-sm dark:shadow-2xl">
+<div class="flex items-center gap-5">
+<div class="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-900/30 text-blue-600 dark:text-blue-400">
+<span class="material-symbols-rounded">forum</span>
+</div>
+<div>
+<h2 class="font-bold text-lg text-slate-900 dark:text-white">Debate: Compare AI model capabilities and reasoning approaches</h2>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Moderated by: <strong class="text-slate-700 dark:text-slate-300">User (Admin)</strong> • 3 rounds completed</p>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="px-4 py-2 rounded-lg border border-slate-200 dark:border-border-dark hover:bg-slate-50 dark:hover:bg-surface-dark-lighter text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors shadow-sm">Export Transcript</button>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="flex flex-col rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden active-speaker transition-all transform hover:scale-[1.005]">
+<div class="p-4 border-b border-slate-100 dark:border-border-dark flex items-center justify-between bg-white/50 dark:bg-surface-dark-lighter/30">
+<div class="flex items-center gap-3">
+<div class="relative">
+<img alt="GPT-4" class="w-10 h-10 rounded-lg shadow-md object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOLplKvByxhjgw-ZJuosAR4moNxr_ebdw8iz75WqDvb1WLTBQDgtzR5rU6by2ihYqQ-JM3K0igIW-qg2PGICMleA5upJHnwi81y0HWbc5rd4U6ibCfG4B0BsRAMITjdY-j9ZETivpcCwWGGzrOeO5z4W-JxJ21F4JIDiwm3-Gv9RUwWOEgltB-zndmeB4Gt4TJVU9NaHv5xds37L2ctxW1W3-pdcV7BhAAwz5eNHZjm8dYOZiIznjR6Y0U2YfJ_AJyZbyP7ANIAA8B"/>
+<div class="absolute -bottom-1 -right-1 bg-blue-500 w-3 h-3 rounded-full border-2 border-white dark:border-[#151921]"></div>
+</div>
+<div>
+<h4 class="font-bold text-sm text-slate-900 dark:text-white">GPT-4 Omni</h4>
+<span class="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wide border border-blue-200 dark:border-blue-500/20">Current Speaker</span>
+</div>
+</div>
+<div class="text-right">
+<div class="text-[10px] text-slate-400 dark:text-slate-400 font-bold uppercase tracking-widest">Strength</div>
+<div class="text-2xl font-black text-blue-600 dark:text-blue-400">9.4</div>
+</div>
+</div>
+<div class="p-6 flex-1 prose prose-slate dark:prose-invert max-w-none">
+<p class="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+                                When comparing reasoning approaches, it's essential to distinguish between <strong class="text-slate-900 dark:text-white">system-1</strong> (fast, intuitive) and <strong class="text-slate-900 dark:text-white">system-2</strong> (slow, deliberate) processing. Researchers often find that models like myself excel in synthetic reasoning, but can struggle with edge cases where human educators might demonstrate more nuanced viewpoints.
+                            </p>
+<ul class="text-sm space-y-1 my-4 text-slate-600 dark:text-slate-300">
+<li class="flex items-start gap-2"><span class="w-1.5 h-1.5 mt-2 rounded-full bg-blue-500 shrink-0"></span>Researchers prioritize benchmarking accuracy</li>
+<li class="flex items-start gap-2"><span class="w-1.5 h-1.5 mt-2 rounded-full bg-blue-500 shrink-0"></span>Educators focus on clarity and multi-perspective thinking</li>
+<li class="flex items-start gap-2"><span class="w-1.5 h-1.5 mt-2 rounded-full bg-blue-500 shrink-0"></span>Curious minds seek narrative exploration</li>
+</ul>
+<div class="mt-4 p-3 bg-blue-50/50 dark:bg-surface-dark-lighter/50 rounded-lg border-l-2 border-blue-500">
+<p class="text-xs italic text-slate-500 dark:text-slate-400 m-0">"Value Proposition: Get practical answers from multiple AI perspectives."</p>
+</div>
+</div>
+<div class="p-4 border-t border-slate-100 dark:border-border-dark flex items-center justify-between bg-white/30 dark:bg-surface-dark-lighter/10">
+<div class="flex gap-2">
+<button class="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-green-500 dark:hover:text-green-400 transition-colors shadow-sm hover:shadow">
+<span class="material-symbols-rounded text-[20px]">thumb_up</span>
+</button>
+<button class="p-2 hover:bg-white dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors shadow-sm hover:shadow">
+<span class="material-symbols-rounded text-[20px]">thumb_down</span>
+</button>
+</div>
+<button class="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 transition-colors">
+                                VIEW LOGS <span class="material-symbols-rounded text-sm">open_in_new</span>
+</button>
+</div>
+</div>
+<div class="flex flex-col bg-white dark:bg-[#151921] rounded-2xl border border-slate-200 dark:border-border-dark overflow-hidden transition-all transform hover:scale-[1.005] shadow-sm hover:shadow-md dark:hover:shadow-black/40">
+<div class="p-4 border-b border-slate-100 dark:border-border-dark flex items-center justify-between bg-slate-50/80 dark:bg-surface-dark-lighter/30">
+<div class="flex items-center gap-3">
+<img alt="Claude" class="w-10 h-10 rounded-lg shadow-sm object-cover grayscale opacity-80" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA95ph14vYNsYMFdEQPvMk9yCbUu9c-2HcR8apOP2Q2hG1D9VJwRu4xDEVOGq8AY8TX7_QMQ7hsKkFJMF-qKE4vJNIsyyO_r6GTWGfUsCGg_c-bM7qy_Y30z54LSCm16mtdxU6bfCY1zvnh151T0u12OGCF9eBvQOapdbfs__zbU99V5005YP_7wkKVTi9v-y1TqAXrr0gaY6xAVayn6KoQD8POJfZNr0vd24XDcrHPCufrTU0Vdvam31WWpyJFmbsP48CqD5b4ZsAC"/>
+<div>
+<h4 class="font-bold text-sm text-slate-900 dark:text-white/80">Claude 3.5 Sonnet</h4>
+<span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wide border border-slate-200 dark:border-slate-700">Waiting</span>
+</div>
+</div>
+<div class="text-right">
+<div class="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest">Strength</div>
+<div class="text-2xl font-black text-slate-300 dark:text-slate-600">8.9</div>
+</div>
+</div>
+<div class="p-6 flex-1 prose prose-slate dark:prose-invert max-w-none opacity-80">
+<p class="text-sm leading-relaxed text-slate-600 dark:text-slate-400">
+                                While I agree with my counterpart, I would argue that <strong class="text-slate-900 dark:text-slate-300">transparency</strong> in reasoning is more critical for educators. When demonstrating different viewpoints, the ability to cite structural logic behind a conclusion is what provides "actionable insights."
+                            </p>
+<p class="text-sm text-slate-600 dark:text-slate-400 mt-4">
+                                My approach involves a more cautious, Constitutional AI framework that ensures safety while exploring complex topics through AI-powered discourse.
+                            </p>
+</div>
+<div class="p-4 border-t border-slate-100 dark:border-border-dark flex items-center justify-between bg-slate-50/50 dark:bg-surface-dark-lighter/10">
+<div class="flex gap-2">
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-green-500 transition-colors">
+<span class="material-symbols-rounded text-[20px]">thumb_up</span>
+</button>
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-500 transition-colors">
+<span class="material-symbols-rounded text-[20px]">thumb_down</span>
+</button>
+</div>
+<button class="text-xs font-bold text-slate-500 hover:text-blue-600 dark:hover:text-blue-400 flex items-center gap-1 transition-colors">
+                                VIEW LOGS <span class="material-symbols-rounded text-sm">open_in_new</span>
+</button>
+</div>
+</div>
+</div>
+<div class="flex justify-center py-4">
+<button class="group flex items-center gap-2 px-6 py-3 rounded-full border border-dashed border-slate-300 dark:border-slate-700 bg-transparent hover:bg-white/50 dark:hover:bg-surface-dark/50 text-slate-500 dark:text-slate-400 hover:border-blue-500 hover:text-blue-500 dark:hover:text-blue-400 transition-all">
+<span class="material-symbols-rounded group-hover:rotate-90 transition-transform">add_circle</span>
+<span class="text-sm font-semibold">Add AI Participant to Grid</span>
+</button>
+</div>
+</div>
+</main>
+</div>
+<div class="p-4 md:p-6 bg-white dark:bg-[#0E1117] border-t border-slate-200 dark:border-border-dark relative z-20 shadow-[0_-4px_24px_-12px_rgba(0,0,0,0.05)]">
+<div class="max-w-4xl mx-auto">
+<div class="relative group">
+<div class="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-10 group-focus-within:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+<div class="relative bg-white dark:bg-[#151921] border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-xl">
+<textarea class="w-full bg-transparent border-none focus:ring-0 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 resize-none min-h-[80px] text-lg font-light" placeholder="Ask a question or moderate the current debate topic..."></textarea>
+<div class="flex items-center justify-between mt-3">
+<div class="flex items-center gap-2">
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
+<span class="material-symbols-rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">add</span>
+</button>
+<div class="h-6 w-[1px] bg-slate-200 dark:bg-slate-700 mx-1"></div>
+<button class="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-surface-dark-lighter border border-transparent dark:border-slate-700 hover:border-blue-500/50 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full text-xs font-bold transition-all group/model">
+<span class="material-symbols-rounded text-blue-500 text-sm group-hover/model:text-blue-400">auto_awesome</span>
+<span class="text-slate-600 dark:text-slate-300">3.0 FLASH</span>
+<span class="material-symbols-rounded text-xs text-slate-400">expand_more</span>
+</button>
+<button class="flex md:hidden items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-full text-xs font-bold">
+<span class="material-symbols-rounded text-sm">devices</span>
+<span>WEB</span>
+</button>
+</div>
+<button class="bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-xl shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center transform active:scale-95">
+<span class="material-symbols-rounded">arrow_upward</span>
+</button>
+</div>
+</div>
+</div>
+<p class="text-center text-[10px] text-slate-400 dark:text-slate-500 mt-4 uppercase tracking-widest font-bold">AI DebateLab Dashboard v1.4.2 — Built for Researchers &amp; Educators</p>
+</div>
+</div>
+
+</body></html>

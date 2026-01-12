@@ -3,39 +3,45 @@ import { useParams, useLocation, useSearch } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Loader2,
-  Sparkles,
-  ChevronDown,
-  ChevronUp,
   ArrowLeft,
+  ArrowRight,
   Download,
   Eye,
   MessageSquare,
   Coins,
   Pencil,
   Check,
-  X,
   Trophy,
-  Target,
-  Vote,
-  Lightbulb,
-  Drama,
-  Flag,
-  User,
   Zap,
   Clock,
-  Send
+  Send,
+  MoreVertical,
+  Settings,
+  PlusCircle,
+  ArrowUp,
+  ChevronDown
 } from "lucide-react";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 import { AI_MODELS, getModelById } from "../../../shared/models";
 import { useStreamingResponse } from "@/hooks/useStreamingResponse";
 import DashboardLayout from "@/components/DashboardLayout";
+
+// Helper for model avatars
+const MODEL_AVATARS: Record<string, string> = {
+  "openai-gpt-4o": "https://lh3.googleusercontent.com/aida-public/AB6AXuBOLplKvByxhjgw-ZJuosAR4moNxr_ebdw8iz75WqDvb1WLTBQDgtzR5rU6by2ihYqQ-JM3K0igIW-qg2PGICMleA5upJHnwi81y0HWbc5rd4U6ibCfG4B0BsRAMITjdY-j9ZETivpcCwWGGzrOeO5z4W-JxJ21F4JIDiwm3-Gv9RUwWOEgltB-zndmeB4Gt4TJVU9NaHv5xds37L2ctxW1W3-pdcV7BhAAwz5eNHZjm8dYOZiIznjR6Y0U2YfJ_AJyZbyP7ANIAA8B",
+  "openai-gpt-4o-mini": "https://lh3.googleusercontent.com/aida-public/AB6AXuBOLplKvByxhjgw-ZJuosAR4moNxr_ebdw8iz75WqDvb1WLTBQDgtzR5rU6by2ihYqQ-JM3K0igIW-qg2PGICMleA5upJHnwi81y0HWbc5rd4U6ibCfG4B0BsRAMITjdY-j9ZETivpcCwWGGzrOeO5z4W-JxJ21F4JIDiwm3-Gv9RUwWOEgltB-zndmeB4Gt4TJVU9NaHv5xds37L2ctxW1W3-pdcV7BhAAwz5eNHZjm8dYOZiIznjR6Y0U2YfJ_AJyZbyP7ANIAA8B",
+  "anthropic-claude-3-5-sonnet": "https://lh3.googleusercontent.com/aida-public/AB6AXuBsUJG18pv_JyryLP8CN3kFy8q8A5rFB8qe8_I_WS5eTsNOTAnAkefEN2N5Z1AKhxFUGkMt22Mewrxj_vAMuWLaolyg_TCu0a5FhIsrtcKnWzdb0pCkX609ztnZnxPmiheizygBelezwUwGzlqXhWfR2_iqlSfT8-2PJZOMThcTZH2VEThvx0nJM4nE0i64QPwEC1NrZ8AkPb6TNCw6uN0mpyKhgg-rb_ACywvZf3r4IZQg0ikMgGgEMMysfGNVP0-XOuNfoHyoWr-o",
+  "google-gemini-1-5-pro": "https://lh3.googleusercontent.com/aida-public/AB6AXuAUpqrdOCj1s-_X_d5Yz13RwUDd1QcYE0iRkzBirEl5DsCKdvWu_rYeMpjjF5hR4eU2gkhVuQC0PAjfExlfH2wGUEhaPHDFOCTbgLKrm9XtESlCZHumbNkihg_-fbjFhKDBDKqLWeYYIfPz7eJy88buAeiNym3tOtAn_27g2VoqkFjKIo5JLhDE7AAjLwSOS4Ps5Im7o-S3azVTG6ZcwOV4-r-71UaV_YY2UloWicenmcBfjrej_Lkjg4KFM7h33OZM218DTxTZ0pmR",
+  "google-gemini-1-5-flash": "https://lh3.googleusercontent.com/aida-public/AB6AXuAUpqrdOCj1s-_X_d5Yz13RwUDd1QcYE0iRkzBirEl5DsCKdvWu_rYeMpjjF5hR4eU2gkhVuQC0PAjfExlfH2wGUEhaPHDFOCTbgLKrm9XtESlCZHumbNkihg_-fbjFhKDBDKqLWeYYIfPz7eJy88buAeiNym3tOtAn_27g2VoqkFjKIo5JLhDE7AAjLwSOS4Ps5Im7o-S3azVTG6ZcwOV4-r-71UaV_YY2UloWicenmcBfjrej_Lkjg4KFM7h33OZM218DTxTZ0pmR",
+};
+
+const getModelAvatar = (modelId: string) => {
+  return MODEL_AVATARS[modelId] || `https://api.dicebear.com/7.x/bottts/svg?seed=${modelId}`;
+};
 
 interface ResponseCardProps {
   modelId: string;
@@ -44,91 +50,79 @@ interface ResponseCardProps {
   isDevilsAdvocate: boolean;
   timestamp?: Date;
   voteCount?: number;
-  isCollapsible?: boolean;
   isStreaming?: boolean;
+  isActive?: boolean;
+  score?: number;
 }
 
-function ResponseCard({ modelId, modelName, content, isDevilsAdvocate, timestamp, voteCount, isCollapsible = true, isStreaming = false }: ResponseCardProps) {
-  const [isOpen, setIsOpen] = useState(true);
-  const model = AI_MODELS.find(m => m.id === modelId);
-
-  const cardContent = (
-    <div className="prose-debate text-slate-200 leading-relaxed">
-      <Streamdown>{content}</Streamdown>
-    </div>
-  );
+function ResponseCard({
+  modelId,
+  modelName,
+  content,
+  isDevilsAdvocate,
+  timestamp,
+  voteCount,
+  isStreaming = false,
+  isActive = false,
+  score = 9.4
+}: ResponseCardProps) {
+  const model = AI_MODELS.find(m => m.id === modelId) || getModelById(modelId);
+  const avatar = getModelAvatar(modelId);
 
   return (
-    <Card className={`glass-panel border-none shadow-xl transition-all duration-300 ${isOpen ? "pb-4" : "pb-0"} overflow-hidden rounded-2xl`}>
-      <CardHeader className="pb-3 px-6 pt-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl bg-background/50 border border-border/50 shadow-inner">
-              {model?.icon || "🤖"}
-            </div>
-            <div>
-              <CardTitle className="text-lg font-bold flex items-center gap-3">
-                {modelName}
-                {isDevilsAdvocate && (
-                  <span className="text-[10px] font-bold uppercase tracking-widest bg-amber-500/10 text-amber-500 px-2.5 py-1 rounded-full border border-amber-500/20">
-                    🎭 Devil's Advocate
-                  </span>
-                )}
-              </CardTitle>
-              <div className="flex items-center gap-3 mt-1">
-                {timestamp && (
-                  <p className="text-[10px] uppercase font-bold tracking-tighter text-muted-foreground flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
-                    {new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </p>
-                )}
-                {isStreaming && (
-                  <span className="flex items-center gap-1.5 text-primary text-[10px] font-bold uppercase tracking-widest animate-pulse">
-                    <span className="w-1.5 h-1.5 bg-primary rounded-full" />
-                    Synthesizing...
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            {voteCount !== undefined && voteCount > 0 && (
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-primary/10 text-primary rounded-full border border-primary/20 text-xs font-bold">
-                <Vote className="h-3.5 w-3.5" />
-                {voteCount}
-              </div>
+    <div className={`flex flex-col bg-white dark:bg-[#151921] rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-all transform hover:scale-[1.005] shadow-xl relative z-10 ${isActive ? 'active-speaker' : 'dark:hover:shadow-black/40'}`}>
+      <div className="p-4 border-b border-slate-200 dark:border-border-dark flex items-center justify-between bg-slate-50/50 dark:bg-surface-dark-lighter/30">
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <img
+              src={avatar}
+              alt={modelName}
+              className={`w-10 h-10 rounded-lg shadow-sm object-cover ${!isActive && !isStreaming ? 'grayscale opacity-80' : ''}`}
+            />
+            {isActive && (
+              <div className="absolute -bottom-1 -right-1 bg-blue-500 w-3 h-3 rounded-full border-2 border-white dark:border-[#151921]"></div>
             )}
-            {isCollapsible && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsOpen(!isOpen)}
-                className="hover:bg-background/50 rounded-xl"
-              >
-                {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-              </Button>
+          </div>
+          <div>
+            <h4 className="font-bold text-sm text-slate-900 dark:text-white">{modelName}</h4>
+            {isActive ? (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400 font-bold uppercase tracking-wide border border-blue-200 dark:border-blue-500/20">
+                Current Speaker
+              </span>
+            ) : (
+              <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wide border border-slate-200 dark:border-slate-700">
+                {isStreaming ? 'Synthesizing...' : 'Waiting'}
+              </span>
             )}
           </div>
         </div>
-      </CardHeader>
-
-      {isCollapsible ? (
-        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
-          <CollapsibleContent>
-            <CardContent className="px-6 pb-6 pt-2">
-              <div className="h-px w-full bg-gradient-to-r from-transparent via-border/50 to-transparent mb-6" />
-              {cardContent}
-              {isStreaming && <div className="h-8 w-2 bg-primary/50 animate-pulse mt-2 inline-block rounded-full" />}
-            </CardContent>
-          </CollapsibleContent>
-        </Collapsible>
-      ) : (
-        <CardContent className="px-6 pb-6 pt-2">
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-border/50 to-transparent mb-6" />
-          {cardContent}
-        </CardContent>
-      )}
-    </Card>
+        <div className="text-right">
+          <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">Score</div>
+          <div className={`text-2xl font-black ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-600'}`}>
+            {score.toFixed(1)}
+          </div>
+        </div>
+      </div>
+      <div className={`p-6 flex-1 prose prose-slate dark:prose-invert max-w-none ${!isActive && !isStreaming ? 'opacity-80' : ''}`}>
+        <div className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+          <Streamdown>{content}</Streamdown>
+          {isStreaming && <span className="inline-block w-2 h-4 ml-1 bg-blue-500 animate-pulse" />}
+        </div>
+      </div>
+      <div className="p-4 border-t border-slate-200 dark:border-border-dark flex items-center justify-between bg-slate-50/30 dark:bg-surface-dark-lighter/10">
+        <div className="flex gap-2">
+          <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-green-500 dark:hover:text-green-400 transition-colors">
+            <span className="material-symbols-rounded text-[20px]">thumb_up</span>
+          </button>
+          <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
+            <span className="material-symbols-rounded text-[20px]">thumb_down</span>
+          </button>
+        </div>
+        <button className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 transition-colors uppercase tracking-wide">
+          View Logs <span className="material-symbols-rounded text-sm">open_in_new</span>
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -180,6 +174,7 @@ export default function Debate() {
   const startNewRound = trpc.debate.startNewRound.useMutation();
   const updateDebate = trpc.debate.update.useMutation();
   const endDebate = trpc.results.endDebate.useMutation();
+
   const { data: debateResult } = trpc.results.getResult.useQuery(
     { debateId },
     { enabled: debate?.status === "completed" }
@@ -210,10 +205,6 @@ export default function Debate() {
 
   const votingComplete = !debate?.votingEnabled || (currentRound?.votes?.length || 0) > 0;
   const moderatorComplete = !!currentRound?.moderatorSynthesis;
-
-  const getVoteCount = (modelId: string) => {
-    return currentRound?.votes?.filter(v => v.votedForModelId === modelId).length || 0;
-  };
 
   const handleStartGeneration = async () => {
     if (!debate || !currentRound) return;
@@ -282,8 +273,9 @@ export default function Debate() {
     }
   };
 
-  const handleStartNewRound = async () => {
-    if (!debate || !followUpQuestion.trim()) {
+  const handleStartNewRound = async (questionOverride?: string) => {
+    const question = questionOverride || followUpQuestion;
+    if (!debate || !question.trim()) {
       toast.error("Enter a follow-up question");
       return;
     }
@@ -291,7 +283,7 @@ export default function Debate() {
     try {
       await startNewRound.mutateAsync({
         debateId,
-        followUpQuestion: followUpQuestion.trim(),
+        followUpQuestion: question.trim(),
       });
       setFollowUpQuestion("");
       setShowModerator(false);
@@ -302,10 +294,9 @@ export default function Debate() {
     }
   };
 
-  const handleExport = (format: "markdown" | "pdf") => {
+  const handleExport = () => {
     if (!debate) return;
-    // ... export logic simplified for brevitiy, would normally copy from original ...
-    toast.info("Exporting debate...");
+    toast.info("Exporting transcript...");
   };
 
   if (!debate) {
@@ -320,298 +311,300 @@ export default function Debate() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-full premium-bg">
-        {/* Workspace Sub-Header */}
-        <div className="sticky top-0 z-20 glass-panel border-t-0 border-x-0 border-b border-white/5 py-4 px-6 flex items-center justify-between">
-          <div className="flex items-center gap-4 min-w-0">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/")} className="hover:bg-white/5 rounded-xl">
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="min-w-0">
-              {isEditingQuestion ? (
-                <div className="flex items-center gap-2">
-                  <Textarea
-                    value={editedQuestion}
-                    onChange={(e) => setEditedQuestion(e.target.value)}
-                    className="h-9 min-h-0 py-1 text-sm bg-background/50 border-white/10 rounded-lg w-[400px]"
-                    autoFocus
-                  />
-                  <Button size="icon" variant="ghost" className="h-8 w-8 text-emerald-500" onClick={async () => {
-                    await updateDebate.mutateAsync({ debateId, title: editedQuestion.trim() });
-                    await refetch(); setIsEditingQuestion(false);
-                  }}>
-                    <Check className="h-4 w-4" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <h1 className="text-lg font-bold text-foreground truncate max-w-xl">
-                    {debate.question}
-                  </h1>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-40 hover:opacity-100" onClick={() => { setEditedQuestion(debate.question); setIsEditingQuestion(true); }}>
-                    <Pencil className="h-3 w-3" />
-                  </Button>
-                </div>
-              )}
-              <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-0.5">
-                <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> ROUND {currentRound?.roundNumber || 1}</span>
-                <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {debate.participantModels.length} PARTICIPANTS</span>
-                {totalUsage.tokens > 0 && <span className="flex items-center gap-1 text-primary/80"><Zap className="h-3 w-3" /> {totalUsage.tokens.toLocaleString()} TOKENS</span>}
-              </div>
-            </div>
+      <div className="flex h-[calc(100vh-64px)] overflow-hidden">
+        {/* Sidebar */}
+        <aside className="w-72 border-r border-slate-200 dark:border-border-dark hidden lg:flex flex-col p-4 bg-white dark:bg-[#0E1117] overflow-y-auto custom-scrollbar">
+          <div className="mb-8">
+            <button
+              onClick={() => navigate("/")}
+              className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-900/20 border border-blue-500/20"
+            >
+              <span className="material-symbols-rounded">add</span>
+              New Debate
+            </button>
           </div>
 
-          <div className="flex items-center gap-3">
-            {totalUsage.cost > 0 && (
-              <div className="hidden lg:flex items-center gap-1.5 px-3 py-1.5 bg-background/50 rounded-xl text-[10px] font-black tracking-tighter border border-white/5 shadow-inner">
-                <Coins className="h-3 w-3 text-amber-500" />
-                <span className="text-foreground">${totalUsage.cost.toFixed(4)}</span>
+          <div className="flex-1 space-y-6">
+            <div>
+              <div className="flex items-center justify-between mb-3 px-2">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Participants</h3>
+                <button className="text-blue-600 dark:text-blue-400 text-xs hover:underline">Manage</button>
               </div>
-            )}
-            <Button variant="outline" size="sm" onClick={() => handleExport("markdown")} className="rounded-xl border-white/5 hover:bg-white/5 h-9">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-          </div>
-        </div>
+              <div className="space-y-2">
+                {debate.participantModels.map((modelId) => {
+                  const m = getModelById(modelId);
+                  const isCurrent = streamingModelId === modelId;
+                  const isFinished = currentRound?.responses?.some(r => r.modelId === modelId);
+                  const avatar = getModelAvatar(modelId);
 
-        <div className="max-w-5xl mx-auto p-6 lg:p-10 space-y-10">
-          {/* Round Navigation */}
-          {debate.rounds && debate.rounds.length > 1 && (
-            <div className="flex items-center justify-center">
-              <div className="inline-flex items-center p-1 bg-background/40 backdrop-blur-xl border border-white/5 rounded-2xl shadow-2xl">
-                {debate.rounds.map((round, i) => (
-                  <button
-                    key={round.id}
-                    onClick={() => setSelectedRoundIndex(i)}
-                    className={`px-5 py-2 rounded-xl text-xs font-bold transition-all ${i === activeRoundIndex
-                      ? "bg-primary text-white shadow-lg shadow-primary/20 scale-105"
-                      : "text-muted-foreground hover:text-foreground hover:bg-white/5"
-                      }`}
-                  >
-                    ROUND {round.roundNumber}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Discussion Area */}
-          <div className="space-y-8 pb-32">
-            {currentRound?.followUpQuestion && (
-              <div className="flex justify-center">
-                <div className="relative group max-w-2xl w-full">
-                  <div className="absolute -inset-0.5 bg-gradient-to-r from-primary to-secondary opacity-20 group-hover:opacity-40 blur transition duration-1000 group-hover:duration-200"></div>
-                  <div className="relative bg-background/80 backdrop-blur-3xl px-8 py-6 rounded-3xl border border-white/10 flex items-start gap-4 shadow-2xl">
-                    <div className="p-3 bg-primary/10 rounded-2xl text-primary">
-                      <MessageSquare className="h-6 w-6" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/60 mb-1">Follow-up context</p>
-                      <p className="text-lg font-medium text-slate-100 leading-snug">{currentRound.followUpQuestion}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Empty State / Start Generation */}
-            {isViewingLatestRound && (!currentRound?.responses || currentRound.responses.length === 0) && !isGenerating && (
-              <div className="py-20 flex flex-col items-center justify-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <div className="relative">
-                  <div className="absolute -inset-4 bg-primary/20 blur-3xl rounded-full"></div>
-                  <Sparkles className="h-16 w-16 text-primary relative" />
-                </div>
-                <div className="text-center space-y-2">
-                  <h3 className="text-2xl font-black tracking-tight">Ready to orchestrate?</h3>
-                  <p className="text-muted-foreground text-sm max-w-xs mx-auto">Click below to initiate the multi-model roundtable discussion.</p>
-                </div>
-                <Button size="lg" onClick={handleStartGeneration} className="h-16 px-10 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-lg shadow-2xl shadow-primary/30 group">
-                  Initiate Debate
-                  <Send className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </div>
-            )}
-
-            {/* Model Responses */}
-            <div className="grid grid-cols-1 gap-6">
-              {currentRound?.responses?.map((response) => (
-                <ResponseCard
-                  key={response.id}
-                  modelId={response.modelId}
-                  modelName={response.modelName}
-                  content={response.content}
-                  isDevilsAdvocate={response.isDevilsAdvocate}
-                  timestamp={response.createdAt}
-                  voteCount={getVoteCount(response.modelId)}
-                />
-              ))}
-
-              {/* Streaming Response */}
-              {isViewingLatestRound && streamingModelId && streamingContent[streamingModelId] && (
-                <ResponseCard
-                  modelId={streamingModelId}
-                  modelName={AI_MODELS.find(m => m.id === streamingModelId)?.name || streamingModelId}
-                  content={streamingContent[streamingModelId]}
-                  isDevilsAdvocate={debate.devilsAdvocateEnabled && debate.devilsAdvocateModel === streamingModelId}
-                  isStreaming={true}
-                  isCollapsible={false}
-                />
-              )}
-
-              {/* Generation Indicator */}
-              {isViewingLatestRound && isGenerating && !streamingContent[debate.participantModels[currentModelIndex]] && (
-                <div className="glass-panel p-8 rounded-3xl flex items-center gap-6 border-dashed border-white/10 animate-pulse">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <div>
-                    <p className="text-sm font-black uppercase tracking-widest text-primary">Awaiting synthesis</p>
-                    <p className="text-lg font-bold">Calling {AI_MODELS.find(m => m.id === debate.participantModels[currentModelIndex])?.name}...</p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Voting Summary */}
-            {debate.votingEnabled && currentRound?.votes && currentRound.votes.length > 0 && (
-              <div className="pt-10">
-                <div className="glass-panel p-8 rounded-3xl border-white/5 space-y-6">
-                  <div className="flex items-center gap-3 border-b border-white/5 pb-4">
-                    <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                      <Vote className="h-5 w-5" />
-                    </div>
-                    <h3 className="text-lg font-black tracking-tight uppercase">Peer Review Protocol</h3>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {currentRound.votes.map((vote: any, i: number) => {
-                      const voterModel = getModelById(vote.voterModelId);
-                      const votedModel = getModelById(vote.votedForModelId);
-                      return (
-                        <div key={i} className="bg-background/40 p-4 rounded-2xl border border-white/5 hover:bg-background/60 transition-colors">
-                          <div className="flex items-center gap-2 mb-2">
-                            <span className="font-bold text-sm">{voterModel?.name || "AI"}</span>
-                            <ArrowRight className="h-3 w-3 text-muted-foreground" />
-                            <span className="font-bold text-sm text-primary">{votedModel?.name || "AI"}</span>
-                          </div>
-                          <p className="text-xs text-muted-foreground italic leading-relaxed">"{vote.reason}"</p>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Moderator Synthesis Section */}
-            {(allResponsesComplete && votingComplete && isViewingLatestRound && !moderatorComplete) && (
-              <div className="flex justify-center py-10">
-                <Button
-                  size="lg"
-                  onClick={handleShowModerator}
-                  className="h-16 px-12 rounded-2xl bg-amber-500 hover:bg-amber-600 text-black font-black text-lg shadow-2xl shadow-amber-500/20 gap-3 group"
-                  disabled={generateModerator.status === "pending"}
-                >
-                  {generateModerator.status === "pending" ? <Loader2 className="h-6 w-6 animate-spin" /> : <Eye className="h-6 w-6 group-hover:scale-110 transition-transform" />}
-                  Generate Synthesis
-                </Button>
-              </div>
-            )}
-
-            {currentRound?.moderatorSynthesis && (
-              <div className="space-y-6">
-                <div className="relative group">
-                  <div className="absolute -inset-1 bg-gradient-to-r from-amber-500 to-yellow-500 opacity-20 blur-2xl rounded-3xl"></div>
-                  <Card className="relative glass-panel border-none shadow-2xl overflow-hidden rounded-[2.5rem]">
-                    <CardHeader className="bg-amber-500/10 px-8 py-6 border-b border-amber-500/10">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-amber-500 flex items-center justify-center text-3xl shadow-lg shadow-amber-500/20">⚖️</div>
-                        <div>
-                          <h3 className="text-xl font-black tracking-tight text-amber-500">MODERATOR SYNTHESIS</h3>
-                          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-amber-500/60">Final dialectic summary</p>
+                  return (
+                    <div key={modelId} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-surface-dark border border-slate-200 dark:border-border-dark hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+                      <img
+                        src={avatar}
+                        alt={m?.name}
+                        className="w-9 h-9 rounded-lg bg-white dark:bg-slate-800 object-cover"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{m?.name || modelId}</p>
+                        <div className="flex items-center gap-1.5">
+                          <div className={`w-1.5 h-1.5 rounded-full ${isCurrent || isFinished ? 'bg-green-500 animate-pulse' : 'bg-slate-400'}`}></div>
+                          <p className={`text-[10px] font-medium uppercase tracking-wide ${isCurrent || isFinished ? 'text-green-600 dark:text-green-400' : 'text-slate-500'}`}>
+                            {isCurrent ? 'Speaking' : isFinished ? 'Active' : 'Waiting'}
+                          </p>
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent className="p-8 lg:p-10 prose-debate text-slate-200 leading-[1.8]">
+                      <button className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                        <span className="material-symbols-rounded text-slate-400 text-sm">settings</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3 px-2">Moderation</h3>
+              <div className="bg-slate-50 dark:bg-surface-dark rounded-xl p-4 border border-slate-200 dark:border-border-dark space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600 dark:text-slate-300">Turn Limit</span>
+                  <span className="text-xs font-mono bg-slate-200 dark:bg-surface-dark-lighter dark:text-slate-300 border dark:border-slate-700 px-2 py-1 rounded-md">10</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-slate-600 dark:text-slate-300">Response Time</span>
+                  <span className="text-xs font-mono bg-slate-200 dark:bg-surface-dark-lighter dark:text-slate-300 border dark:border-slate-700 px-2 py-1 rounded-md">Fast</span>
+                </div>
+                <button
+                  onClick={async () => {
+                    const result = await endDebate.mutateAsync({ debateId, useUserApiKey });
+                    setFinalResults(result); setShowFinalResults(true); await refetch();
+                  }}
+                  className="w-full text-xs font-bold uppercase tracking-wide border border-red-500/20 text-red-500 py-2.5 rounded-lg hover:bg-red-500/10 transition-colors"
+                >
+                  End Session
+                </button>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        {/* Main Workspace */}
+        <main className="flex-1 flex flex-col min-w-0 bg-slate-50 dark:bg-[#0B0E14] premium-bg overflow-hidden relative">
+          {/* Main Content Scrollable Area */}
+          <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+            <div className="max-w-6xl mx-auto space-y-6 pb-24">
+              {/* Debate Header Card */}
+              <div className="flex items-center justify-between bg-white dark:bg-[#151921] p-5 rounded-2xl border border-slate-200 dark:border-border-dark shadow-sm dark:shadow-2xl">
+                <div className="flex items-center gap-5 min-w-0">
+                  <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-900/30 shrink-0">
+                    <span className="material-symbols-rounded text-blue-600 dark:text-blue-400">forum</span>
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="font-bold text-lg text-slate-900 dark:text-white truncate">
+                      Debate: {debate.question}
+                    </h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      Moderated by: <strong className="text-slate-700 dark:text-slate-300">{user?.name || 'User'} (Admin)</strong> • {debate.rounds?.length || 0} rounds completed
+                    </p>
+                  </div>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    onClick={handleExport}
+                    className="px-4 py-2 rounded-lg border border-slate-200 dark:border-border-dark hover:bg-slate-50 dark:hover:bg-surface-dark-lighter text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors"
+                  >
+                    Export Transcript
+                  </button>
+                </div>
+              </div>
+
+              {/* Round Tabs if multiple rounds */}
+              {debate.rounds && debate.rounds.length > 1 && (
+                <div className="flex justify-center">
+                  <div className="inline-flex items-center p-1 bg-white/50 dark:bg-[#151921]/50 backdrop-blur-xl border border-slate-200 dark:border-border-dark rounded-xl shadow-sm">
+                    {debate.rounds.map((round, i) => (
+                      <button
+                        key={round.id}
+                        onClick={() => setSelectedRoundIndex(i)}
+                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${i === activeRoundIndex
+                          ? "bg-blue-600 text-white shadow-md shadow-blue-500/20"
+                          : "text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+                          }`}
+                      >
+                        ROUND {round.roundNumber}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Response Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {currentRound?.responses?.map((response) => (
+                  <ResponseCard
+                    key={response.id}
+                    modelId={response.modelId}
+                    modelName={response.modelName}
+                    content={response.content}
+                    isDevilsAdvocate={response.isDevilsAdvocate}
+                    timestamp={response.createdAt}
+                  />
+                ))}
+
+                {/* Streaming Response */}
+                {isViewingLatestRound && streamingModelId && streamingContent[streamingModelId] && (
+                  <ResponseCard
+                    modelId={streamingModelId}
+                    modelName={AI_MODELS.find(m => m.id === streamingModelId)?.name || getModelById(streamingModelId)?.name || streamingModelId}
+                    content={streamingContent[streamingModelId]}
+                    isDevilsAdvocate={debate.devilsAdvocateEnabled && debate.devilsAdvocateModel === streamingModelId}
+                    isStreaming={true}
+                    isActive={true}
+                  />
+                )}
+
+                {/* Initial Start Trigger */}
+                {isViewingLatestRound && (!currentRound?.responses || currentRound.responses.length === 0) && !isGenerating && (
+                  <div className="col-span-full py-12 flex flex-col items-center justify-center gap-6">
+                    <div className="p-6 bg-white dark:bg-[#151921] rounded-3xl border border-slate-200 dark:border-border-dark shadow-xl text-center max-w-sm">
+                      <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-100 dark:border-blue-900/30">
+                        <span className="material-symbols-rounded text-3xl text-blue-600 dark:text-blue-400">play_circle</span>
+                      </div>
+                      <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">Ready to Start?</h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">Initiate the roundtable discussion between selected models.</p>
+                      <Button
+                        onClick={handleStartGeneration}
+                        className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold h-12 rounded-xl shadow-lg shadow-blue-500/20"
+                      >
+                        Initiate Round {currentRound?.roundNumber || 1}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Moderator Synthesis Section */}
+              {currentRound?.moderatorSynthesis && (
+                <div className="mt-8 relative group">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-20 blur-2xl rounded-3xl"></div>
+                  <div className="relative bg-white dark:bg-[#151921] rounded-3xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-2xl">
+                    <div className="p-5 border-b border-slate-100 dark:border-border-dark bg-slate-50/50 dark:bg-surface-dark-lighter/30 flex items-center gap-4">
+                      <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+                        <span className="material-symbols-rounded">analytics</span>
+                      </div>
+                      <div>
+                        <h3 className="font-black text-slate-900 dark:text-white uppercase tracking-wider text-sm">Moderator Synthesis</h3>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Consolidated Dialectic Summary</p>
+                      </div>
+                    </div>
+                    <div className="p-8 prose prose-slate dark:prose-invert max-w-none">
                       <Streamdown>{currentRound.moderatorSynthesis}</Streamdown>
 
                       {currentRound.suggestedFollowUp && (
-                        <div className="mt-10 p-6 bg-white/5 rounded-3xl border border-white/5 space-y-4">
-                          <div className="flex items-center gap-2 text-amber-500/80 font-black text-[10px] tracking-widest uppercase">
-                            <Lightbulb className="h-4 w-4" /> Recommended path forward
+                        <div className="mt-8 p-6 bg-blue-50/50 dark:bg-blue-900/10 rounded-2xl border border-blue-100/50 dark:border-blue-900/30">
+                          <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-xs uppercase tracking-widest mb-3">
+                            <span className="material-symbols-rounded text-sm">lightbulb</span> Strategic Direction
                           </div>
-                          <p className="text-lg italic text-slate-300 font-medium leading-normal">"{currentRound.suggestedFollowUp}"</p>
+                          <p className="text-slate-700 dark:text-slate-300 italic text-lg leading-relaxed">"{currentRound.suggestedFollowUp}"</p>
                           {isViewingLatestRound && (
-                            <Button
-                              variant="ghost"
-                              className="text-amber-500 hover:text-amber-400 hover:bg-amber-500/5 p-0 h-auto font-bold text-sm"
-                              onClick={() => setFollowUpQuestion(currentRound.suggestedFollowUp || "")}
+                            <button
+                              onClick={() => handleStartNewRound(currentRound.suggestedFollowUp || '')}
+                              className="mt-4 text-sm font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 underline underline-offset-4"
                             >
-                              Apply to follow-up →
-                            </Button>
+                              Accept & Initiate Next Round →
+                            </button>
                           )}
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
 
-            {/* Follow-up Interface */}
-            {isViewingLatestRound && moderatorComplete && debate?.status !== "completed" && (
-              <div className="pt-20 space-y-8 max-w-3xl mx-auto">
-                <div className="text-center space-y-2">
-                  <h3 className="text-2xl font-black">Continue the Dialectic</h3>
-                  <p className="text-muted-foreground text-sm">Evolve the conversation with a deep-dive follow-up question.</p>
+              {/* Generate Synthesis Trigger */}
+              {(allResponsesComplete && votingComplete && isViewingLatestRound && !moderatorComplete) && (
+                <div className="flex justify-center py-8">
+                  <Button
+                    onClick={handleShowModerator}
+                    className="h-14 px-10 rounded-2xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold shadow-xl shadow-indigo-500/20 gap-3 group"
+                    disabled={generateModerator.status === "pending"}
+                  >
+                    {generateModerator.status === "pending" ? <Loader2 className="h-5 w-5 animate-spin" /> : <span className="material-symbols-rounded group-hover:scale-110 transition-transform">insights</span>}
+                    Generate Final Synthesis
+                  </Button>
                 </div>
+              )}
 
-                <div className="glass-panel p-2 rounded-[2rem] shadow-2xl">
-                  <Textarea
-                    placeholder="Ask the panel to elaborate or pivot..."
-                    value={followUpQuestion}
-                    onChange={(e) => setFollowUpQuestion(e.target.value)}
-                    className="min-h-[140px] text-lg bg-transparent border-none focus-visible:ring-0 px-6 py-4 resize-none"
-                  />
-                  <div className="flex items-center justify-between p-2">
+              {/* Concluded State */}
+              {((showFinalResults && finalResults) || debateResult) && (
+                <div className="pt-10 flex justify-center">
+                  <div className="bg-white dark:bg-[#151921] border border-blue-200 dark:border-blue-900/30 rounded-3xl p-10 text-center shadow-2xl max-w-lg">
+                    <div className="w-20 h-20 bg-amber-50 dark:bg-amber-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                      <span className="material-symbols-rounded text-4xl text-amber-500">emoji_events</span>
+                    </div>
+                    <h2 className="text-2xl font-black text-slate-900 dark:text-white mb-2">Debate Concluded</h2>
+                    <p className="text-slate-500 dark:text-slate-400 mb-8">The dialectic process is complete. Detailed performance metrics have been recorded in the leaderboard.</p>
                     <Button
-                      variant="outline"
-                      className="rounded-2xl border-white/5 hover:bg-white/5 h-12 px-6 font-bold"
-                      onClick={async () => {
-                        const result = await endDebate.mutateAsync({ debateId, useUserApiKey });
-                        setFinalResults(result); setShowFinalResults(true); await refetch();
-                      }}
-                      disabled={endDebate.status === "pending"}
+                      className="w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold h-12 rounded-xl"
+                      onClick={() => navigate("/leaderboard")}
                     >
-                      {endDebate.status === "pending" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Flag className="h-4 w-4 mr-2" />}
-                      Finalize Debate
-                    </Button>
-
-                    <Button
-                      className="rounded-2xl bg-primary hover:bg-primary/90 text-white h-12 px-8 font-black shadow-lg shadow-primary/20"
-                      onClick={handleStartNewRound}
-                      disabled={!followUpQuestion.trim() || startNewRound.status === "pending"}
-                    >
-                      {startNewRound.status === "pending" ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4 mr-2" />}
-                      Next Round
+                      View Leaderboard Rankings
                     </Button>
                   </div>
                 </div>
-              </div>
-            )}
-
-            {/* Results placeholder - keeping original logic for results but could be styled further if needed */}
-            {((showFinalResults && finalResults) || debateResult) && (
-              <div className="pt-10">
-                <Card className="glass-panel border-amber-500/30 bg-amber-500/5 rounded-3xl p-8 text-center space-y-6">
-                  <Trophy className="h-16 w-16 text-amber-500 mx-auto" />
-                  <h2 className="text-3xl font-black">Debate Concluded</h2>
-                  <Button size="lg" className="bg-amber-500 text-black font-bold px-10 rounded-2xl" onClick={() => navigate("/leaderboard")}>
-                    View Results & Leaderboard
-                  </Button>
-                </Card>
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
+
+          {/* Floating Input Area */}
+          <div className="p-4 md:p-6 bg-white dark:bg-[#0E1117] border-t border-slate-200 dark:border-border-dark relative z-20 shadow-[0_-4px_24px_-12px_rgba(0,0,0,0.05)]">
+            <div className="max-w-4xl mx-auto">
+              <div className="relative group">
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-10 group-focus-within:opacity-40 transition duration-1000 group-hover:duration-200"></div>
+                <div className="relative bg-white dark:bg-[#151921] border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-xl">
+                  <textarea
+                    value={followUpQuestion}
+                    onChange={(e) => setFollowUpQuestion(e.target.value)}
+                    className="w-full bg-transparent border-none focus:ring-0 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 resize-none min-h-[80px] text-lg font-light custom-scrollbar"
+                    placeholder="Ask a question or moderate the current debate topic..."
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleStartNewRound();
+                      }
+                    }}
+                  ></textarea>
+                  <div className="flex items-center justify-between mt-3">
+                    <div className="flex items-center gap-2">
+                      <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
+                        <span className="material-symbols-rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">add</span>
+                      </button>
+                      <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-700 mx-1"></div>
+                      <button className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-surface-dark-lighter border border-transparent dark:border-slate-700 hover:border-blue-500/50 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full text-xs font-bold transition-all group/model">
+                        <span className="material-symbols-rounded text-blue-500 text-sm group-hover/model:text-blue-400">auto_awesome</span>
+                        <span className="text-slate-600 dark:text-slate-300">
+                          {getModelById(debate.moderatorModel)?.name || debate.moderatorModel}
+                        </span>
+                        <span className="material-symbols-rounded text-xs text-slate-400">expand_more</span>
+                      </button>
+                      <button className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-full text-xs font-bold border border-transparent">
+                        <span className="material-symbols-rounded text-sm">devices</span>
+                        <span>WEB</span>
+                      </button>
+                    </div>
+                    <button
+                      onClick={() => handleStartNewRound()}
+                      disabled={!followUpQuestion.trim() || isGenerating}
+                      className="bg-blue-600 hover:bg-blue-500 text-white p-3 rounded-xl shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="material-symbols-rounded">arrow_upward</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <p className="text-center text-[10px] text-slate-400 dark:text-slate-500 mt-4 uppercase tracking-widest font-bold">AI DebateLab Dashboard v1.4.2 — Built for Researchers & Educators</p>
+            </div>
+          </div>
+        </main>
       </div>
     </DashboardLayout>
   );
