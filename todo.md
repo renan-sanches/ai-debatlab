@@ -145,3 +145,6 @@
 - [x] Fix PDF content not being passed to AI models (PDF now included as multimodal file_url content)
 - [x] Extract PDF text content and include directly in prompts (file_url not supported by all providers)
 - [x] Set voting enabled to YES by default
+
+## Refactoring UI Consistency
+- [x] Update UI font to Plus Jakarta Sans
