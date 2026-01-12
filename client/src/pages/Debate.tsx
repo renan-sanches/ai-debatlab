@@ -574,21 +574,12 @@ export default function Debate() {
                   ></textarea>
                   <div className="flex items-center justify-between mt-3">
                     <div className="flex items-center gap-2">
-                      <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors">
-                        <span className="material-symbols-rounded text-slate-400 hover:text-slate-600 dark:hover:text-slate-300">add</span>
-                      </button>
-                      <div className="h-6 w-[1px] bg-slate-200 dark:bg-slate-700 mx-1"></div>
-                      <button className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-surface-dark-lighter border border-transparent dark:border-slate-700 hover:border-blue-500/50 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-full text-xs font-bold transition-all group/model">
-                        <span className="material-symbols-rounded text-blue-500 text-sm group-hover/model:text-blue-400">auto_awesome</span>
+                      <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-surface-dark-lighter border border-transparent dark:border-slate-700 rounded-full text-xs font-bold">
+                        <span className="material-symbols-rounded text-blue-500 text-sm">auto_awesome</span>
                         <span className="text-slate-600 dark:text-slate-300">
                           {getModelById(debate.moderatorModel)?.name || debate.moderatorModel}
                         </span>
-                        <span className="material-symbols-rounded text-xs text-slate-400">expand_more</span>
-                      </button>
-                      <button className="hidden md:flex items-center gap-2 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 rounded-full text-xs font-bold border border-transparent">
-                        <span className="material-symbols-rounded text-sm">devices</span>
-                        <span>WEB</span>
-                      </button>
+                      </div>
                     </div>
                     <button
                       onClick={() => handleStartNewRound()}

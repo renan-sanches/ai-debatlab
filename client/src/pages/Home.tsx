@@ -153,10 +153,7 @@ export default function Home() {
           </div>
 
           <div className="text-center mb-12 relative z-10 w-full max-w-4xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50/50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800 text-blue-600 dark:text-blue-300 text-xs font-bold uppercase tracking-wider mb-6">
-              <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-              Now with Plus Jakarta Sans
-            </div>
+
 
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 text-slate-900 dark:text-white leading-tight">
               Start a new debate

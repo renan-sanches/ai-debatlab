@@ -155,15 +155,15 @@ function DashboardLayoutContent({
   return (
     <div className="flex flex-col min-h-screen w-full">
       {/* Premium Header */}
-      <header className="h-20 border-b border-slate-200 dark:border-slate-800 glass-panel flex items-center justify-between px-6 sticky top-0 z-[60]">
-        <div className="flex items-center gap-2">
+      <header className="h-20 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1120] flex items-center justify-between px-6 sticky top-0 z-[60]">
+        <button onClick={() => setLocation("/")} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
           <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
             <span className="material-symbols-outlined font-bold text-lg">query_stats</span>
           </div>
           <span className="text-xl font-extrabold tracking-tight dark:text-white hidden sm:block">
             Debate<span className="text-primary">Lab</span>
           </span>
-        </div>
+        </button>
 
         <div className="flex items-center gap-4">
           <div className="hidden md:flex items-center bg-slate-100 dark:bg-slate-800/50 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest border border-slate-200 dark:border-slate-700/50">

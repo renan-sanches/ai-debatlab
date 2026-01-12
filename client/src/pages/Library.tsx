@@ -16,7 +16,8 @@ import {
   ArrowRight,
   Clock,
   Search,
-  History as HistoryIcon
+  History as HistoryIcon,
+  StopCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import { AI_MODELS } from "../../../shared/models";
@@ -39,6 +40,16 @@ export default function Library() {
     },
     onError: (error) => {
       toast.error("Failed to delete debate: " + error.message);
+    },
+  });
+
+  const endDebate = trpc.results.endDebate.useMutation({
+    onSuccess: () => {
+      toast.success("Debate ended successfully");
+      refetch();
+    },
+    onError: (error) => {
+      toast.error("Failed to end debate: " + error.message);
     },
   });
 
@@ -219,6 +230,17 @@ export default function Library() {
                           <Eye className="h-4 w-4" />
                           Review
                         </button>
+
+                        {debate.status === 'active' && (
+                          <button
+                            className="h-12 px-4 rounded-xl border border-red-200 dark:border-red-500/20 font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-all flex items-center justify-center gap-2"
+                            onClick={() => endDebate.mutate({ debateId: debate.id, useUserApiKey: sessionStorage.getItem('useUserApiKey') === 'true' })}
+                            disabled={endDebate.isPending}
+                          >
+                            <StopCircle className="h-4 w-4" />
+                            End
+                          </button>
+                        )}
 
                         <button
                           className={`flex-1 h-12 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${debate.status === 'active' ? 'bg-primary text-white shadow-lg shadow-blue-500/20 hover:bg-blue-500' : 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900'}`}
