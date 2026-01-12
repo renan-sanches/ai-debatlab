@@ -181,10 +181,63 @@ TONE:
 THE GOAL: The user should finish reading this and know exactly what to think and do.`;
 }
 
+export function buildDiscourseAnalyticsPrompt(ctx: PromptContext): string {
+  return `Analyze the debate content and provide structured discourse analytics in JSON format.
+
+THE QUESTION: ${ctx.userQuestion}
+ROUND: ${ctx.roundNumber}
+
+WHAT EVERYONE SAID:
+${ctx.allParticipantResponses}
+
+YOUR TASK:
+Calculate precise discourse metrics as percentages (0-100):
+
+1. **consensusScore**: How unified are the responses? 
+   - 100 = complete agreement on approach and reasoning
+   - 0 = completely opposed views and conflicting recommendations
+
+2. **tensionScore**: Level of disagreement/conflict
+   - 0 = harmonious discussion with minor nuances
+   - 100 = highly contentious with fundamental conflicts
+
+3. **agreementRate**: What percentage of models share similar core reasoning paths?
+   - 100 = all models reached same conclusion via same logic
+   - 0 = every model took a completely different approach
+
+4. **topicDrift**: How much did discussion drift from the original question?
+   - 0 = perfectly on-topic, directly addressing the question
+   - 100 = completely off-topic, tangents and unrelated discussions
+
+Also identify the top 3 tension points (specific claims causing disagreement).
+
+OUTPUT FORMAT (JSON only, no markdown):
+{
+  "consensusScore": <number 0-100>,
+  "tensionScore": <number 0-100>,
+  "agreementRate": <number 0-100>,
+  "topicDrift": <number 0-100>,
+  "tensionPoints": [
+    {
+      "claim": "<short summary of specific point>",
+      "tensionLevel": <number 0-100>,
+      "description": "<brief explanation of opposing viewpoints>"
+    }
+  ]
+}
+
+CRITERIA:
+- Consensus: Based on alignment of final recommendations
+- Tension: Based on strength of disagreements and contradictions
+- Agreement Rate: Based on similarity of reasoning paths and logic
+- Topic Drift: Based on relevance to original question
+- Tension Points: Focus on substantive disagreements (facts, values, predictions)`;
+}
+
 // Helper to format responses for context
 export function formatResponsesForContext(responses: Array<{ modelName: string; content: string; isDevilsAdvocate: boolean }>): string {
   if (responses.length === 0) return "";
-  
+
   return responses.map((r) => {
     const daIndicator = r.isDevilsAdvocate ? " [DEVIL'S ADVOCATE]" : "";
     return `--- ${r.modelName}${daIndicator} ---\n${r.content}`;
@@ -194,7 +247,7 @@ export function formatResponsesForContext(responses: Array<{ modelName: string; 
 // Helper to format votes for context
 export function formatVotesForContext(votes: Array<{ voterModelId: string; votedForModelId: string; reason: string | null }>, modelMap: Record<string, string>): string {
   if (votes.length === 0) return "";
-  
+
   return votes.map(v => {
     const voterName = modelMap[v.voterModelId] || v.voterModelId;
     const votedForName = modelMap[v.votedForModelId] || v.votedForModelId;

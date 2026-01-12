@@ -44,6 +44,7 @@ export const debates = pgTable("debates", {
   tags: json("tags").$type<string[]>().default([]),
   imageUrl: text("image_url"),
   pdfUrl: text("pdf_url"),
+  modelAvatars: json("model_avatars").$type<Record<string, string>>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -61,6 +62,17 @@ export const rounds = pgTable("rounds", {
   followUpQuestion: text("follow_up_question"),
   moderatorSynthesis: text("moderator_synthesis"),
   suggestedFollowUp: text("suggested_follow_up"),
+  discourseAnalytics: json("discourse_analytics").$type<{
+    consensusScore: number;       // 0-100: How unified the panel is
+    tensionScore: number;         // 0-100: Level of disagreement
+    agreementRate: number;        // 0-100: Percentage of similar reasoning
+    topicDrift: number;           // 0-100: How far discussion drifted from original question
+    tensionPoints: Array<{
+      claim: string;
+      tensionLevel: number;
+      description: string;
+    }>;
+  }>(),
   status: roundStatusEnum("status").default("in_progress").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -124,24 +136,24 @@ export const debateResults = pgTable("debate_results", {
   id: serial("id").primaryKey(),
   debateId: integer("debate_id").notNull().unique(),
   userId: integer("user_id").notNull(),
-  
+
   // Final assessment from moderator
   finalAssessment: text("final_assessment"),
   synthesis: text("synthesis"),
-  
+
   // Winner information
   moderatorTopPick: varchar("moderator_top_pick", { length: 64 }),
   moderatorReasoning: text("moderator_reasoning"),
-  
+
   // Voting results: { modelId: voteCount }
   peerVotes: json("peer_votes").$type<Record<string, number>>().default({}),
-  
+
   // Models mentioned in strongest arguments
   strongestArguments: json("strongest_arguments").$type<string[]>().default([]),
-  
+
   // Devil's advocate success (if applicable)
   devilsAdvocateSuccess: boolean("devils_advocate_success").default(false),
-  
+
   // Points awarded: { modelId: { total, breakdown } }
   pointsAwarded: json("points_awarded").$type<Record<string, {
     total: number;
@@ -150,11 +162,11 @@ export const debateResults = pgTable("debate_results", {
     strongArguments: number;
     devilsAdvocateBonus: number;
   }>>().default({}),
-  
+
   // Metadata
   roundCount: integer("round_count").default(1).notNull(),
   topicTags: json("topic_tags").$type<string[]>().default([]),
-  
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -168,7 +180,7 @@ export const modelStats = pgTable("model_stats", {
   id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   modelId: varchar("model_id", { length: 64 }).notNull(),
-  
+
   // Aggregate stats
   totalPoints: integer("total_points").default(0).notNull(),
   totalDebates: integer("total_debates").default(0).notNull(),
@@ -176,10 +188,10 @@ export const modelStats = pgTable("model_stats", {
   totalPeerVotes: integer("total_peer_votes").default(0).notNull(),
   strongArgumentMentions: integer("strong_argument_mentions").default(0).notNull(),
   devilsAdvocateWins: integer("devils_advocate_wins").default(0).notNull(),
-  
+
   // Recent form (points in last 3 debates)
   recentPoints: integer("recent_points").default(0).notNull(),
-  
+
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 

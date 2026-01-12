@@ -35,7 +35,7 @@ export default function Home() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [debateType, setDebateType] = useState<"app" | "web">("web");
+
 
   // Get available models
   const { data: availableModelsData } = trpc.models.available.useQuery(
@@ -159,22 +159,7 @@ export default function Home() {
             </div>
 
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-6 text-slate-900 dark:text-white leading-tight">
-              Start a new
-              <span className="inline-flex items-center bg-slate-100 dark:bg-surface-dark p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700/60 mx-2 align-middle shadow-inner">
-                <button
-                  onClick={() => setDebateType("app")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${debateType === "app" ? "bg-white dark:bg-slate-700 shadow-md text-slate-900 dark:text-white ring-1 ring-black/5 dark:ring-white/10" : "text-slate-600 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
-                >
-                  <span className="material-symbols-outlined text-base">smartphone</span> App
-                </button>
-                <button
-                  onClick={() => setDebateType("web")}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${debateType === "web" ? "bg-white dark:bg-slate-700 shadow-md text-slate-900 dark:text-white ring-1 ring-black/5 dark:ring-white/10" : "text-slate-600 dark:text-slate-300 hover:bg-white/50 dark:hover:bg-slate-700/50"}`}
-                >
-                  <span className="material-symbols-outlined text-base">web</span> Web
-                </button>
-              </span>
-              debate
+              Start a new debate
             </h1>
             <p className="text-slate-600 dark:text-slate-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
               Orchestrate complex discussions between top-tier AI models. Compare reasoning, detect bias, and synthesize actionable insights in real-time.
@@ -306,13 +291,7 @@ export default function Home() {
             </div>
           </div>
 
-          {/* Model Logos Ticker */}
-          <div className="mt-16 flex flex-wrap justify-center gap-8 opacity-60 dark:opacity-40 grayscale hover:grayscale-0 transition-all duration-500">
-            <div className="h-6 w-auto text-slate-400 dark:text-slate-500 font-bold text-lg tracking-widest">OPENAI</div>
-            <div className="h-6 w-auto text-slate-400 dark:text-slate-500 font-bold text-lg tracking-widest">ANTHROPIC</div>
-            <div className="h-6 w-auto text-slate-400 dark:text-slate-500 font-bold text-lg tracking-widest">GOOGLE</div>
-            <div className="h-6 w-auto text-slate-400 dark:text-slate-500 font-bold text-lg tracking-widest">META AI</div>
-          </div>
+
         </section>
 
         {/* Pick your AI Panel Section */}
@@ -327,9 +306,7 @@ export default function Home() {
                   Construct a debate between the world's most powerful language models. Compare reasoning, bias, and creative outputs side-by-side.
                 </p>
               </div>
-              <button className="text-primary font-bold flex items-center gap-2 hover:gap-3 transition-all group">
-                View all models < ChevronRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
-              </button>
+
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -383,39 +360,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Design System Section */}
-        <section className="py-24 px-6 bg-slate-50 dark:bg-[#0B1120] border-t border-slate-200 dark:border-slate-900" id="logo-concepts">
-          <div className="max-w-7xl mx-auto">
-            <div className="mb-16 text-center md:text-left">
-              <span className="text-slate-500 dark:text-slate-500 font-bold uppercase tracking-widest text-xs mb-2 block">Design System</span>
-              <h2 className="text-3xl font-extrabold mb-4 text-slate-900 dark:text-white">Brand Identity Concepts</h2>
-              <p className="text-slate-600 dark:text-slate-400 max-w-2xl leading-relaxed">
-                Minimalist, tech-forward explorations for the DebateLab brand.
-              </p>
-            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <BrandConceptCard
-                title="Concept A: The Matrix"
-                subtitle="Represents comparison & structure"
-                iconType="matrix"
-                color="primary"
-              />
-              <BrandConceptCard
-                title="Concept B: The Spark"
-                subtitle="Represents intelligence & creation"
-                iconType="spark"
-                color="secondary"
-              />
-              <BrandConceptCard
-                title="Concept C: The Pulse"
-                subtitle="Represents data-driven insights"
-                iconType="pulse"
-                color="slate"
-              />
-            </div>
-          </div>
-        </section>
       </div>
     </DashboardLayout>
   );
@@ -467,46 +412,4 @@ function StepCard({ number, title, description, color }: { number: number, title
   );
 }
 
-function BrandConceptCard({ title, subtitle, iconType, color }: { title: string, subtitle: string, iconType: "matrix" | "spark" | "pulse", color: "primary" | "secondary" | "slate" }) {
-  const colorStyles: Record<string, string> = {
-    primary: "bg-primary shadow-primary/20",
-    secondary: "bg-gradient-to-br from-primary to-secondary shadow-purple-500/20",
-    slate: "border-slate-100 dark:border-slate-700/50"
-  };
 
-  const currentStyles = colorStyles[color];
-
-  return (
-    <div className={`bg-white dark:bg-surface-dark p-10 rounded-3xl border border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center space-y-6 hover:border-${color}/30 transition-colors group`}>
-      <div className={`relative w-24 h-24 transition-transform group-hover:scale-110 duration-300 flex items-center justify-center ${color === 'slate' ? 'border-4 rounded-full' : ''}`}>
-        {iconType === 'matrix' && (
-          <>
-            <div className="absolute inset-0 bg-primary/20 rounded-xl rotate-12 backdrop-blur-sm"></div>
-            <div className={`absolute inset-0 rounded-xl flex items-center justify-center shadow-lg ${currentStyles}`}>
-              <div className="grid grid-cols-2 gap-1.5 w-10 h-10">
-                <div className="w-4 h-4 bg-white rounded-sm opacity-90"></div>
-                <div className="w-4 h-4 border-2 border-white rounded-sm opacity-70"></div>
-                <div className="w-4 h-4 border-2 border-white rounded-sm opacity-70"></div>
-                <div className="w-4 h-4 bg-white rounded-sm opacity-90"></div>
-              </div>
-            </div>
-          </>
-        )}
-        {iconType === 'spark' && (
-          <div className={`w-full h-full rounded-full flex items-center justify-center shadow-lg ${currentStyles}`}>
-            <span className="material-symbols-outlined text-white text-5xl">auto_awesome</span>
-          </div>
-        )}
-        {iconType === 'pulse' && (
-          <div className="w-16 h-16 bg-slate-50 dark:bg-slate-700/50 rounded-full flex items-center justify-center">
-            <span className="material-symbols-outlined text-primary text-4xl">analytics</span>
-          </div>
-        )}
-      </div>
-      <div className="text-center">
-        <span className="font-bold text-lg block text-slate-900 dark:text-white mb-1">{title}</span>
-        <span className="text-sm text-slate-500 dark:text-slate-400">{subtitle}</span>
-      </div>
-    </div>
-  );
-}

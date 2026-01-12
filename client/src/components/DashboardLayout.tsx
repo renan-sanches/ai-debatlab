@@ -22,7 +22,7 @@ import {
 import { getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useTheme } from "@/contexts/ThemeContext";
-import { LayoutDashboard, LogOut, PanelLeft, Users, Moon, Sun, Plus } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, Moon, Sun, Plus, User2, Trophy } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -195,6 +195,20 @@ function DashboardLayoutContent({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
               <DropdownMenuItem
+                onClick={() => setLocation("/account")}
+                className="cursor-pointer rounded-xl p-3"
+              >
+                <User2 className="mr-3 h-4 w-4" />
+                <span className="font-bold text-sm">Account</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setLocation("/leaderboard")}
+                className="cursor-pointer rounded-xl p-3"
+              >
+                <Trophy className="mr-3 h-4 w-4" />
+                <span className="font-bold text-sm">Leaderboard</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
                 onClick={logout}
                 className="cursor-pointer text-destructive focus:text-destructive rounded-xl p-3"
               >
@@ -282,7 +296,7 @@ function DashboardLayoutContent({
         </div>
 
         <SidebarInset className="bg-background">
-          <main className="flex-1 overflow-y-auto custom-scrollbar">
+          <main className="flex-1 overflow-y-auto custom-scrollbar pt-6">
             {children}
           </main>
         </SidebarInset>

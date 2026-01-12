@@ -34,7 +34,7 @@ export function ModelSelector({
   const { data: leaderModels } = trpc.models.leaders.useQuery();
   const { data: allModelsData, isLoading: isLoadingAll } = trpc.models.all.useQuery();
   const { data: favorites } = trpc.models.favorites.useQuery();
-  
+
   const addFavorite = trpc.models.addFavorite.useMutation();
   const removeFavorite = trpc.models.removeFavorite.useMutation();
   const utils = trpc.useUtils();
@@ -43,7 +43,7 @@ export function ModelSelector({
   const quickSelectModels = useMemo(() => {
     const leaders = leaderModels || [];
     const favs = favorites || [];
-    
+
     // Convert favorites to AIModel format
     const favModels: AIModel[] = favs.map(f => ({
       id: f.openRouterId.replace(/\//g, "-"),
@@ -55,25 +55,25 @@ export function ModelSelector({
       lens: "Your favorite model",
       isLeader: false,
     }));
-    
+
     // Merge, removing duplicates (favorites take priority)
     const favIds = new Set(favModels.map(f => f.openRouterId));
     const uniqueLeaders = leaders.filter(l => !favIds.has(l.openRouterId));
-    
+
     return [...favModels, ...uniqueLeaders].slice(0, 8);
   }, [leaderModels, favorites]);
 
   // Group all models by provider
   const modelsByProvider = useMemo(() => {
     if (!allModelsData?.models) return {};
-    
+
     const grouped: Record<string, AIModel[]> = {};
     for (const model of allModelsData.models) {
       const provider = model.provider;
       if (!grouped[provider]) grouped[provider] = [];
       grouped[provider].push(model);
     }
-    
+
     // Sort providers by model count
     return Object.fromEntries(
       Object.entries(grouped).sort((a, b) => b[1].length - a[1].length)
@@ -83,22 +83,22 @@ export function ModelSelector({
   // Filter models based on search
   const filteredModels = useMemo(() => {
     if (!allModelsData?.models) return [];
-    
+
     let models = allModelsData.models;
-    
+
     if (selectedProvider) {
       models = models.filter(m => m.provider === selectedProvider);
     }
-    
+
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
-      models = models.filter(m => 
+      models = models.filter(m =>
         m.name.toLowerCase().includes(query) ||
         m.provider.toLowerCase().includes(query) ||
         m.openRouterId.toLowerCase().includes(query)
       );
     }
-    
+
     return models;
   }, [allModelsData, searchQuery, selectedProvider]);
 
@@ -158,7 +158,7 @@ export function ModelSelector({
               )}
             </button>
           ))}
-          
+
           {/* Browse More Button */}
           <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
             <DialogTrigger asChild>
@@ -167,14 +167,14 @@ export function ModelSelector({
                 <span className="text-sm">Browse {allModelsData?.total || "200+"}+ models</span>
               </button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[80vh]">
+            <DialogContent className="max-w-6xl max-h-[85vh]">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
                   <Sparkles className="w-5 h-5" />
                   All OpenRouter Models ({allModelsData?.total || 0})
                 </DialogTitle>
               </DialogHeader>
-              
+
               <div className="flex gap-4 mt-4">
                 {/* Provider sidebar */}
                 <div className="w-48 shrink-0">
@@ -206,7 +206,7 @@ export function ModelSelector({
                     </div>
                   </ScrollArea>
                 </div>
-                
+
                 {/* Model list */}
                 <div className="flex-1">
                   <div className="relative mb-4">
@@ -218,7 +218,7 @@ export function ModelSelector({
                       className="pl-9"
                     />
                   </div>
-                  
+
                   <ScrollArea className="h-[50vh]">
                     {isLoadingAll ? (
                       <div className="flex items-center justify-center h-32">
@@ -275,7 +275,7 @@ export function ModelSelector({
                             </button>
                           </div>
                         ))}
-                        
+
                         {filteredModels.length === 0 && (
                           <div className="text-center text-muted-foreground py-8">
                             No models found matching "{searchQuery}"
@@ -286,7 +286,7 @@ export function ModelSelector({
                   </ScrollArea>
                 </div>
               </div>
-              
+
               <div className="flex justify-between items-center mt-4 pt-4 border-t">
                 <div className="text-sm text-muted-foreground">
                   {selectedModels.length} models selected
@@ -306,7 +306,7 @@ export function ModelSelector({
           <span className="text-sm text-muted-foreground mr-2">Selected:</span>
           {selectedModels.map((modelId) => {
             const model = allModelsData?.models.find(m => m.openRouterId === modelId) ||
-                         quickSelectModels.find(m => m.openRouterId === modelId);
+              quickSelectModels.find(m => m.openRouterId === modelId);
             return (
               <span
                 key={modelId}

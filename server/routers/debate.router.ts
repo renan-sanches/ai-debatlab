@@ -12,10 +12,12 @@ import {
   buildDevilsAdvocatePrompt,
   buildVotingPrompt,
   buildModeratorPrompt,
+  buildDiscourseAnalyticsPrompt,
   formatResponsesForContext,
   formatVotesForContext,
 } from "../prompts";
 import { extractPdfForPrompt } from "../pdfExtractor";
+import { assignRandomAvatars } from "../config/avatarConfig";
 
 /**
  * Generate a short, descriptive title for a debate question
@@ -70,6 +72,9 @@ export const debateRouter = router({
       // Generate AI title if not provided
       const title = input.title || await generateDebateTitle(input.question);
 
+      // Assign random avatars to participant models
+      const modelAvatars = assignRandomAvatars(input.participantModels);
+
       const debateId = await db.createDebate({
         userId: ctx.user.id,
         question: input.question,
@@ -82,6 +87,7 @@ export const debateRouter = router({
         tags: input.tags || [],
         imageUrl: input.imageUrl,
         pdfUrl: input.pdfUrl,
+        modelAvatars,
       });
 
       // Create first round
@@ -167,10 +173,10 @@ export const debateRouter = router({
     .mutation(async ({ ctx, input }) => {
       const { storagePut } = await import("../storage");
       const { nanoid } = await import("nanoid");
-      
+
       const buffer = Buffer.from(input.imageData, "base64");
       const fileKey = `debates/${ctx.user.id}/${nanoid()}.${input.extension}`;
-      
+
       const { url } = await storagePut(fileKey, buffer, input.mimeType);
       return { url };
     }),
@@ -250,7 +256,7 @@ export const debateRouter = router({
       // Get user's API key if they want to use their own billing
       let userApiKey: string | null = null;
       let apiProvider: "openrouter" | "anthropic" | "openai" | "google" | null = null;
-      
+
       if (input.useUserApiKey) {
         // Try OpenRouter first (most flexible)
         const openRouterKey = await db.getUserApiKeyByProvider(ctx.user.id, "openrouter");
@@ -350,7 +356,7 @@ export const debateRouter = router({
         // Get user's API key if they want to use their own billing
         let userApiKey: string | null = null;
         let apiProvider: "openrouter" | "anthropic" | "openai" | "google" | null = null;
-        
+
         if (input.useUserApiKey) {
           const openRouterKey = await db.getUserApiKeyByProvider(ctx.user.id, "openrouter");
           if (openRouterKey) {
@@ -374,13 +380,13 @@ export const debateRouter = router({
 
         const rawVoteContent = response.choices[0]?.message?.content;
         const voteContent = typeof rawVoteContent === 'string' ? rawVoteContent : "";
-        
+
         // Build a map of all participant models for matching
         const participantModelsMap = debate.participantModels.map(id => {
           const m = getModelById(id);
           return { id, name: m?.name || id, model: m };
         });
-        
+
         // Parse vote from response - handle multiple formats
         const votePatterns = [
           /\*\*MY VOTE:\s*([^*\n]+)\*\*/i,
@@ -397,7 +403,7 @@ export const debateRouter = router({
           /I choose\s+([^.\n,]+)/i,
           /I select\s+([^.\n,]+)/i,
         ];
-        
+
         let votedForName = "";
         for (const pattern of votePatterns) {
           const match = voteContent.match(pattern);
@@ -406,7 +412,7 @@ export const debateRouter = router({
             break;
           }
         }
-        
+
         // Try to find reason with multiple patterns
         const reasonPatterns = [
           /\*\*WHY:\*\*\s*([\s\S]+?)(?=\n\n|$)/i,
@@ -416,7 +422,7 @@ export const debateRouter = router({
           /because\s+([^.]+\.)/i,
           /Their argument\s+([^.]+\.)/i,
         ];
-        
+
         let reason = "";
         for (const pattern of reasonPatterns) {
           const match = voteContent.match(pattern);
@@ -425,7 +431,7 @@ export const debateRouter = router({
             break;
           }
         }
-        
+
         // If no explicit pattern matched, use the first sentence as reason
         if (!reason && voteContent.length > 0) {
           const firstSentence = voteContent.match(/^[^.!?]+[.!?]/);
@@ -433,11 +439,11 @@ export const debateRouter = router({
             reason = firstSentence[0].trim();
           }
         }
-        
+
         if (votedForName) {
           // More flexible model matching - check against all participants
           const voteLower = votedForName.toLowerCase();
-          
+
           // First try exact or close matches with participant models
           let votedForParticipant = participantModelsMap.find(p => {
             const nameLower = p.name.toLowerCase();
@@ -453,16 +459,16 @@ export const debateRouter = router({
             const nameWords = nameLower.split(/[\s-]+/);
             const voteWords = voteLower.split(/[\s-]+/);
             return nameWords.some(w => w.length > 3 && voteWords.includes(w)) ||
-                   voteWords.some(w => w.length > 3 && nameWords.includes(w));
+              voteWords.some(w => w.length > 3 && nameWords.includes(w));
           });
-          
+
           // If no participant match, try AI_MODELS as fallback
           if (!votedForParticipant) {
             const aiModel = AI_MODELS.find(m => {
               const nameLower = m.name.toLowerCase();
               return nameLower.includes(voteLower) ||
-                     voteLower.includes(nameLower) ||
-                     nameLower.split(/[\s-]/)[0] === voteLower.split(/[\s-]/)[0];
+                voteLower.includes(nameLower) ||
+                nameLower.split(/[\s-]/)[0] === voteLower.split(/[\s-]/)[0];
             });
             if (aiModel) {
               votedForParticipant = { id: aiModel.id, name: aiModel.name, model: aiModel };
@@ -554,7 +560,7 @@ export const debateRouter = router({
       // Get user's API key if they want to use their own billing
       let userApiKey: string | null = null;
       let apiProvider: "openrouter" | "anthropic" | "openai" | "google" | null = null;
-      
+
       if (input.useUserApiKey) {
         const openRouterKey = await db.getUserApiKeyByProvider(ctx.user.id, "openrouter");
         if (openRouterKey) {
@@ -569,15 +575,53 @@ export const debateRouter = router({
         }
       }
 
-      const response = await invokeLLMWithModel({
-        model: debate.moderatorModel,
-        messages: [{ role: "user", content: prompt }],
-        userApiKey,
-        apiProvider,
+      // Build analytics prompt
+      const analyticsPrompt = buildDiscourseAnalyticsPrompt({
+        userQuestion: question,
+        previousResponses: "",
+        roundNumber: currentRound?.roundNumber || 1,
+        modelName: moderatorModel.name,
+        modelLens: "Analyst",
+        allParticipantResponses: allResponses,
+        pdfContent,
       });
 
-      const rawSynthesis = response.choices[0]?.message?.content;
+      // Execute both requests in parallel
+      const [synthesisResponse, analyticsResponse] = await Promise.all([
+        invokeLLMWithModel({
+          model: debate.moderatorModel,
+          messages: [{ role: "user", content: prompt }],
+          userApiKey,
+          apiProvider,
+        }),
+        invokeLLMWithModel({
+          model: "openai-gpt-4o-mini", // Use a fast, smart model for analytics JSON
+          messages: [{ role: "user", content: analyticsPrompt }],
+          // Use same API key strategy if applicable, or fallback to system
+          // For simplicity, we'll try to use the user's key if it works for OpenAI, otherwise system
+          userApiKey: apiProvider === "openai" ? userApiKey : undefined,
+          apiProvider: apiProvider === "openai" ? "openai" : undefined,
+        }).catch(err => {
+          console.error("Failed to generate analytics:", err);
+          return { choices: [], usage: undefined }; // Return empty on fail so synthesis still succeeds
+        })
+      ]);
+
+      const rawSynthesis = synthesisResponse.choices[0]?.message?.content;
       const synthesis = typeof rawSynthesis === 'string' ? rawSynthesis : "No synthesis generated";
+
+      // Process analytics
+      let discourseAnalytics = null;
+      try {
+        const rawAnalytics = analyticsResponse.choices?.[0]?.message?.content;
+        if (rawAnalytics) {
+          // clean markdown code blocks if present
+          const jsonStr = rawAnalytics.replace(/```json\n?|\n?```/g, "").trim();
+          discourseAnalytics = JSON.parse(jsonStr);
+        }
+      } catch (e) {
+        console.error("Failed to parse analytics JSON:", e);
+      }
 
       // Extract suggested follow-up if present
       const followUpMatch = synthesis.match(/(?:suggested follow-up|follow-up question)[:\s]*([^\n]+)/i);
@@ -587,10 +631,17 @@ export const debateRouter = router({
       await db.updateRound(input.roundId, {
         moderatorSynthesis: synthesis,
         suggestedFollowUp,
+        discourseAnalytics,
         status: "completed",
       });
 
-      return { synthesis, suggestedFollowUp, usage: response.usage };
+      // Combine usage
+      const totalUsage = {
+        totalTokens: (synthesisResponse.usage?.totalTokens || 0) + (analyticsResponse.usage?.totalTokens || 0),
+        estimatedCost: (synthesisResponse.usage?.estimatedCost || 0) + (analyticsResponse.usage?.estimatedCost || 0),
+      };
+
+      return { synthesis, suggestedFollowUp, discourseAnalytics, usage: totalUsage };
     }),
 
   // Start a new round with follow-up question

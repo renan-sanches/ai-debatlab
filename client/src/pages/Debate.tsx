@@ -22,26 +22,18 @@ import {
   Settings,
   PlusCircle,
   ArrowUp,
-  ChevronDown
+  ChevronDown,
+  Map as MapIcon // Renamed to avoid confusion if needed, though not strictly necessary
 } from "lucide-react";
+import { VisualDialecticMap } from "@/components/debate/VisualDialecticMap";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 import { AI_MODELS, getModelById } from "../../../shared/models";
 import { useStreamingResponse } from "@/hooks/useStreamingResponse";
 import DashboardLayout from "@/components/DashboardLayout";
 
-// Helper for model avatars
-const MODEL_AVATARS: Record<string, string> = {
-  "openai-gpt-4o": "https://lh3.googleusercontent.com/aida-public/AB6AXuBOLplKvByxhjgw-ZJuosAR4moNxr_ebdw8iz75WqDvb1WLTBQDgtzR5rU6by2ihYqQ-JM3K0igIW-qg2PGICMleA5upJHnwi81y0HWbc5rd4U6ibCfG4B0BsRAMITjdY-j9ZETivpcCwWGGzrOeO5z4W-JxJ21F4JIDiwm3-Gv9RUwWOEgltB-zndmeB4Gt4TJVU9NaHv5xds37L2ctxW1W3-pdcV7BhAAwz5eNHZjm8dYOZiIznjR6Y0U2YfJ_AJyZbyP7ANIAA8B",
-  "openai-gpt-4o-mini": "https://lh3.googleusercontent.com/aida-public/AB6AXuBOLplKvByxhjgw-ZJuosAR4moNxr_ebdw8iz75WqDvb1WLTBQDgtzR5rU6by2ihYqQ-JM3K0igIW-qg2PGICMleA5upJHnwi81y0HWbc5rd4U6ibCfG4B0BsRAMITjdY-j9ZETivpcCwWGGzrOeO5z4W-JxJ21F4JIDiwm3-Gv9RUwWOEgltB-zndmeB4Gt4TJVU9NaHv5xds37L2ctxW1W3-pdcV7BhAAwz5eNHZjm8dYOZiIznjR6Y0U2YfJ_AJyZbyP7ANIAA8B",
-  "anthropic-claude-3-5-sonnet": "https://lh3.googleusercontent.com/aida-public/AB6AXuBsUJG18pv_JyryLP8CN3kFy8q8A5rFB8qe8_I_WS5eTsNOTAnAkefEN2N5Z1AKhxFUGkMt22Mewrxj_vAMuWLaolyg_TCu0a5FhIsrtcKnWzdb0pCkX609ztnZnxPmiheizygBelezwUwGzlqXhWfR2_iqlSfT8-2PJZOMThcTZH2VEThvx0nJM4nE0i64QPwEC1NrZ8AkPb6TNCw6uN0mpyKhgg-rb_ACywvZf3r4IZQg0ikMgGgEMMysfGNVP0-XOuNfoHyoWr-o",
-  "google-gemini-1-5-pro": "https://lh3.googleusercontent.com/aida-public/AB6AXuAUpqrdOCj1s-_X_d5Yz13RwUDd1QcYE0iRkzBirEl5DsCKdvWu_rYeMpjjF5hR4eU2gkhVuQC0PAjfExlfH2wGUEhaPHDFOCTbgLKrm9XtESlCZHumbNkihg_-fbjFhKDBDKqLWeYYIfPz7eJy88buAeiNym3tOtAn_27g2VoqkFjKIo5JLhDE7AAjLwSOS4Ps5Im7o-S3azVTG6ZcwOV4-r-71UaV_YY2UloWicenmcBfjrej_Lkjg4KFM7h33OZM218DTxTZ0pmR",
-  "google-gemini-1-5-flash": "https://lh3.googleusercontent.com/aida-public/AB6AXuAUpqrdOCj1s-_X_d5Yz13RwUDd1QcYE0iRkzBirEl5DsCKdvWu_rYeMpjjF5hR4eU2gkhVuQC0PAjfExlfH2wGUEhaPHDFOCTbgLKrm9XtESlCZHumbNkihg_-fbjFhKDBDKqLWeYYIfPz7eJy88buAeiNym3tOtAn_27g2VoqkFjKIo5JLhDE7AAjLwSOS4Ps5Im7o-S3azVTG6ZcwOV4-r-71UaV_YY2UloWicenmcBfjrej_Lkjg4KFM7h33OZM218DTxTZ0pmR",
-};
-
-const getModelAvatar = (modelId: string) => {
-  return MODEL_AVATARS[modelId] || `https://api.dicebear.com/7.x/bottts/svg?seed=${modelId}`;
-};
+import { DiscourseAnalyticsWidget } from "@/components/debate/DiscourseAnalyticsWidget";
+import { getModelAvatar } from "@/config/avatarConfig";
 
 interface ResponseCardProps {
   modelId: string;
@@ -53,6 +45,7 @@ interface ResponseCardProps {
   isStreaming?: boolean;
   isActive?: boolean;
   score?: number;
+  modelAvatars?: Record<string, string> | null;
 }
 
 function ResponseCard({
@@ -64,10 +57,11 @@ function ResponseCard({
   voteCount,
   isStreaming = false,
   isActive = false,
-  score = 9.4
+  score = 9.4,
+  modelAvatars
 }: ResponseCardProps) {
   const model = AI_MODELS.find(m => m.id === modelId) || getModelById(modelId);
-  const avatar = getModelAvatar(modelId);
+  const avatar = getModelAvatar(modelId, modelAvatars);
 
   return (
     <div className={`flex flex-col bg-white dark:bg-[#151921] rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-all transform hover:scale-[1.005] shadow-xl relative z-10 ${isActive ? 'active-speaker' : 'dark:hover:shadow-black/40'}`}>
@@ -327,40 +321,40 @@ export default function Debate() {
           <div className="flex-1 space-y-6">
             <div>
               <div className="flex items-center justify-between mb-3 px-2">
-                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Participants</h3>
-                <button className="text-blue-600 dark:text-blue-400 text-xs hover:underline">Manage</button>
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400">Dialectic Map</h3>
               </div>
-              <div className="space-y-2">
-                {debate.participantModels.map((modelId) => {
-                  const m = getModelById(modelId);
-                  const isCurrent = streamingModelId === modelId;
-                  const isFinished = currentRound?.responses?.some(r => r.modelId === modelId);
-                  const avatar = getModelAvatar(modelId);
-
-                  return (
-                    <div key={modelId} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-50 dark:bg-surface-dark border border-slate-200 dark:border-border-dark hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
-                      <img
-                        src={avatar}
-                        alt={m?.name}
-                        className="w-9 h-9 rounded-lg bg-white dark:bg-slate-800 object-cover"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{m?.name || modelId}</p>
-                        <div className="flex items-center gap-1.5">
-                          <div className={`w-1.5 h-1.5 rounded-full ${isCurrent || isFinished ? 'bg-green-500 animate-pulse' : 'bg-slate-400'}`}></div>
-                          <p className={`text-[10px] font-medium uppercase tracking-wide ${isCurrent || isFinished ? 'text-green-600 dark:text-green-400' : 'text-slate-500'}`}>
-                            {isCurrent ? 'Speaking' : isFinished ? 'Active' : 'Waiting'}
-                          </p>
-                        </div>
-                      </div>
-                      <button className="p-1 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors">
-                        <span className="material-symbols-rounded text-slate-400 text-sm">settings</span>
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+              <VisualDialecticMap
+                rounds={debate.rounds || []}
+                currentRoundIndex={activeRoundIndex}
+                streamingModelId={streamingModelId}
+                onNodeClick={(elementId) => {
+                  const el = document.getElementById(elementId);
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    // Flash effect could be added here
+                  }
+                }}
+              />
             </div>
+
+            {/* Collapsed Participants List (Optional or removed in favor of map) */}
+            {/* Keeping it for now but maybe pushed down or made compact? 
+                Actually, the map replaces the list for navigation, but we might want a simple list for managing models.
+                Let's keep the map as the primary view.
+            */}
+
+
+
+            {/* Discourse Analytics Widget */}
+            {currentRound && (
+              <div className="mb-6">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3 px-2">Live Analytics</h3>
+                <DiscourseAnalyticsWidget
+                  analytics={currentRound.discourseAnalytics as any}
+                  isLoading={isGenerating || generateModerator.status === "pending"}
+                />
+              </div>
+            )}
 
             <div>
               <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3 px-2">Moderation</h3>
@@ -438,28 +432,33 @@ export default function Debate() {
               )}
 
               {/* Response Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6" id={`round-${currentRound?.id || 'start'}`}>
                 {currentRound?.responses?.map((response) => (
-                  <ResponseCard
-                    key={response.id}
-                    modelId={response.modelId}
-                    modelName={response.modelName}
-                    content={response.content}
-                    isDevilsAdvocate={response.isDevilsAdvocate}
-                    timestamp={response.createdAt}
-                  />
+                  <div key={response.id} id={`response-${response.id}`}>
+                    <ResponseCard
+                      modelId={response.modelId}
+                      modelName={response.modelName}
+                      content={response.content}
+                      isDevilsAdvocate={response.isDevilsAdvocate}
+                      timestamp={response.createdAt}
+                      modelAvatars={debate?.modelAvatars}
+                    />
+                  </div>
                 ))}
 
                 {/* Streaming Response */}
                 {isViewingLatestRound && streamingModelId && streamingContent[streamingModelId] && (
-                  <ResponseCard
-                    modelId={streamingModelId}
-                    modelName={AI_MODELS.find(m => m.id === streamingModelId)?.name || getModelById(streamingModelId)?.name || streamingModelId}
-                    content={streamingContent[streamingModelId]}
-                    isDevilsAdvocate={debate.devilsAdvocateEnabled && debate.devilsAdvocateModel === streamingModelId}
-                    isStreaming={true}
-                    isActive={true}
-                  />
+                  <div id={`response-streaming-${streamingModelId}`}>
+                    <ResponseCard
+                      modelId={streamingModelId}
+                      modelName={AI_MODELS.find(m => m.id === streamingModelId)?.name || getModelById(streamingModelId)?.name || streamingModelId}
+                      content={streamingContent[streamingModelId]}
+                      isDevilsAdvocate={debate.devilsAdvocateEnabled && debate.devilsAdvocateModel === streamingModelId}
+                      isStreaming={true}
+                      isActive={true}
+                      modelAvatars={debate?.modelAvatars}
+                    />
+                  </div>
                 )}
 
                 {/* Initial Start Trigger */}
@@ -484,7 +483,7 @@ export default function Debate() {
 
               {/* Moderator Synthesis Section */}
               {currentRound?.moderatorSynthesis && (
-                <div className="mt-8 relative group">
+                <div className="mt-8 relative group" id={`moderator-${currentRound.id}`}>
                   <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-20 blur-2xl rounded-3xl"></div>
                   <div className="relative bg-white dark:bg-[#151921] rounded-3xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-2xl">
                     <div className="p-5 border-b border-slate-100 dark:border-border-dark bg-slate-50/50 dark:bg-surface-dark-lighter/30 flex items-center gap-4">
@@ -605,7 +604,7 @@ export default function Debate() {
             </div>
           </div>
         </main>
-      </div>
-    </DashboardLayout>
+      </div >
+    </DashboardLayout >
   );
 }
