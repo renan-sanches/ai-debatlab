@@ -73,7 +73,7 @@ export function DiscourseAnalyticsWidget({ analytics, isLoading }: DiscourseAnal
                 <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3 px-1">Tension Indicators</h3>
                 <div className="space-y-3">
                     {analytics.tensionPoints.map((point, idx) => (
-                        <div key={idx} className="group relative bg-white dark:bg-[#151921] border border-slate-200 dark:border-border-dark rounded-xl p-3 hover:border-purple-400/50 dark:hover:border-purple-500/30 transition-colors">
+                        <div key={idx} className="group relative bg-white dark:bg-card border border-slate-200 dark:border-border-dark rounded-xl p-3 hover:border-purple-400/50 dark:hover:border-purple-500/30 transition-colors">
                             <div className="flex justify-between items-start mb-2 gap-2">
                                 <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 leading-tight">
                                     {point.claim}

@@ -64,7 +64,7 @@ function ResponseCard({
   const avatar = getModelAvatar(modelId, modelAvatars);
 
   return (
-    <div className={`flex flex-col bg-white dark:bg-[#151921] rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-all transform hover:scale-[1.005] shadow-xl relative z-10 ${isActive ? 'active-speaker' : 'dark:hover:shadow-black/40'}`}>
+    <div className={`flex flex-col bg-white dark:bg-card rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-all transform hover:scale-[1.005] shadow-xl relative z-10 ${isActive ? 'active-speaker' : 'dark:hover:shadow-black/40'}`}>
       <div className="p-4 border-b border-slate-200 dark:border-border-dark flex items-center justify-between bg-slate-50/50 dark:bg-surface-dark-lighter/30">
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -307,7 +307,7 @@ export default function Debate() {
     <DashboardLayout>
       <div className="flex h-[calc(100vh-64px)] overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-72 border-r border-slate-200 dark:border-border-dark hidden lg:flex flex-col p-4 bg-white dark:bg-[#0E1117] overflow-y-auto custom-scrollbar">
+        <aside className="w-72 border-r border-slate-200 dark:border-border-dark hidden lg:flex flex-col p-4 bg-white dark:bg-background overflow-y-auto custom-scrollbar">
           <div className="mb-8">
             <button
               onClick={() => navigate("/")}
@@ -387,7 +387,7 @@ export default function Debate() {
           <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
             <div className="max-w-6xl mx-auto space-y-6 pb-24">
               {/* Debate Header Card */}
-              <div className="flex items-center justify-between bg-white dark:bg-[#151921] p-5 rounded-2xl border border-slate-200 dark:border-border-dark shadow-sm dark:shadow-2xl">
+              <div className="flex items-center justify-between bg-white dark:bg-card p-5 rounded-2xl border border-slate-200 dark:border-border-dark shadow-sm dark:shadow-2xl">
                 <div className="flex items-center gap-5 min-w-0">
                   <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-100 dark:border-blue-900/30 shrink-0">
                     <span className="material-symbols-rounded text-blue-600 dark:text-blue-400">forum</span>
@@ -414,7 +414,7 @@ export default function Debate() {
               {/* Round Tabs if multiple rounds */}
               {debate.rounds && debate.rounds.length > 1 && (
                 <div className="flex justify-center">
-                  <div className="inline-flex items-center p-1 bg-white/50 dark:bg-[#151921]/50 backdrop-blur-xl border border-slate-200 dark:border-border-dark rounded-xl shadow-sm">
+                  <div className="inline-flex items-center p-1 bg-white/50 dark:bg-card/50 backdrop-blur-xl border border-slate-200 dark:border-border-dark rounded-xl shadow-sm">
                     {debate.rounds.map((round, i) => (
                       <button
                         key={round.id}
@@ -464,7 +464,7 @@ export default function Debate() {
                 {/* Initial Start Trigger */}
                 {isViewingLatestRound && (!currentRound?.responses || currentRound.responses.length === 0) && !isGenerating && (
                   <div className="col-span-full py-12 flex flex-col items-center justify-center gap-6">
-                    <div className="p-6 bg-white dark:bg-[#151921] rounded-3xl border border-slate-200 dark:border-border-dark shadow-xl text-center max-w-sm">
+                    <div className="p-6 bg-white dark:bg-card rounded-3xl border border-slate-200 dark:border-border-dark shadow-xl text-center max-w-sm">
                       <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/20 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-blue-100 dark:border-blue-900/30">
                         <span className="material-symbols-rounded text-3xl text-blue-600 dark:text-blue-400">play_circle</span>
                       </div>
@@ -485,7 +485,7 @@ export default function Debate() {
               {currentRound?.moderatorSynthesis && (
                 <div className="mt-8 relative group" id={`moderator-${currentRound.id}`}>
                   <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 opacity-20 blur-2xl rounded-3xl"></div>
-                  <div className="relative bg-white dark:bg-[#151921] rounded-3xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-2xl">
+                  <div className="relative bg-white dark:bg-card rounded-3xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-2xl">
                     <div className="p-5 border-b border-slate-100 dark:border-border-dark bg-slate-50/50 dark:bg-surface-dark-lighter/30 flex items-center gap-4">
                       <div className="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
                         <span className="material-symbols-rounded">analytics</span>
@@ -536,7 +536,7 @@ export default function Debate() {
               {/* Concluded State */}
               {((showFinalResults && finalResults) || debateResult) && (
                 <div className="pt-10 flex justify-center">
-                  <div className="bg-white dark:bg-[#151921] border border-blue-200 dark:border-blue-900/30 rounded-3xl p-10 text-center shadow-2xl max-w-lg">
+                  <div className="bg-white dark:bg-card border border-blue-200 dark:border-blue-900/30 rounded-3xl p-10 text-center shadow-2xl max-w-lg">
                     <div className="w-20 h-20 bg-amber-50 dark:bg-amber-900/20 rounded-full flex items-center justify-center mx-auto mb-6">
                       <span className="material-symbols-rounded text-4xl text-amber-500">emoji_events</span>
                     </div>
@@ -555,11 +555,11 @@ export default function Debate() {
           </div>
 
           {/* Floating Input Area */}
-          <div className="p-4 md:p-6 bg-white dark:bg-[#0E1117] border-t border-slate-200 dark:border-border-dark relative z-20 shadow-[0_-4px_24px_-12px_rgba(0,0,0,0.05)]">
+          <div className="p-4 md:p-6 bg-white dark:bg-background border-t border-slate-200 dark:border-border-dark relative z-20 shadow-[0_-4px_24px_-12px_rgba(0,0,0,0.05)]">
             <div className="max-w-4xl mx-auto">
               <div className="relative group">
                 <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-10 group-focus-within:opacity-40 transition duration-1000 group-hover:duration-200"></div>
-                <div className="relative bg-white dark:bg-[#151921] border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-xl">
+                <div className="relative bg-white dark:bg-card border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-xl">
                   <textarea
                     value={followUpQuestion}
                     onChange={(e) => setFollowUpQuestion(e.target.value)}

@@ -51,7 +51,7 @@ export function VisualDialecticMap({
                                 "w-7 h-7 rounded-lg flex items-center justify-center border-2 transition-all shadow-sm z-20",
                                 rIndex === currentRoundIndex
                                     ? "bg-blue-600 border-blue-600 text-white"
-                                    : "bg-white dark:bg-[#0E1117] border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 group-hover:border-blue-500/50"
+                                    : "bg-white dark:bg-background border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 group-hover:border-blue-500/50"
                             )}>
                                 <span className="text-[10px] font-bold">{round.roundNumber}</span>
                             </div>
@@ -147,7 +147,7 @@ function DialecticNode({ modelId, isStreaming, isActive, isDevilsAdvocate, onCli
                 "flex items-center gap-2 p-1.5 rounded-lg border transition-all pl-2 relative overflow-hidden",
                 isStreaming
                     ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
-                    : "bg-white dark:bg-[#151921] border-slate-100 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 shadow-sm"
+                    : "bg-white dark:bg-card border-slate-100 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-700 shadow-sm"
             )}>
                 {/* Active Indicator Glow */}
                 {isStreaming && (
