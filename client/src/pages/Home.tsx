@@ -166,8 +166,8 @@ export default function Home() {
           {/* Main Interaction Area */}
           <div className="w-full max-w-3xl relative group z-20">
             <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl blur opacity-20 group-hover:opacity-50 transition duration-1000"></div>
-            <div className="relative bg-white dark:bg-[#0f1623] border border-slate-200 dark:border-slate-700/50 rounded-3xl p-1 shadow-2xl input-glow input-glow-dark transition-all">
-              <div className="bg-slate-50 dark:bg-[#131b2e] rounded-[1.3rem] p-6 md:p-8">
+            <div className="relative bg-card border-border border rounded-3xl p-1 shadow-2xl input-glow input-glow-dark transition-all">
+              <div className="bg-muted/50 rounded-[1.3rem] p-6 md:p-8">
                 <div className="space-y-6 mb-8">
                   {/* Topic Input */}
                   <div className="flex gap-4 items-start">
