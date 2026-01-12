@@ -46,7 +46,7 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   /* Stitch Design Tokens */
-  --color-background-light: #f8fafc;
+  --color-background-light: #f1f5f9;
   --color-background-dark: #0B1120;
   --color-surface-dark: #151e32;
   --color-surface-dark-lighter: #1E232E;
@@ -192,7 +192,7 @@
     background: linear-gradient(to bottom right, #151921, #0f131a);
   }
 
-  .premium-bg {
+  .dark .premium-bg {
     background-color: #0B0E14;
     background-image:
       radial-gradient(at 0% 0%, hsla(253, 16%, 7%, 1) 0, transparent 50%),
