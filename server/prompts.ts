@@ -320,3 +320,30 @@ ${ctx.devilsAdvocateModel ? `## 🎭 DEVIL'S ADVOCATE IMPACT\nDid ${ctx.devilsAd
 
 Be decisive. Don't hedge. The user wants a clear conclusion.`;
 }
+
+export function buildScoringPrompt(ctx: {
+  topic: string;
+  response: string;
+  modelName: string;
+}): string {
+  return `You are an impartial debate judge. Evaluate the quality of the following argument.
+
+TOPIC: ${ctx.topic}
+
+ARGUMENT BY ${ctx.modelName}:
+"${ctx.response}"
+
+YOUR TASK:
+Rate this argument on a scale of 0.0 to 10.0 based on:
+1. Logical consistency (Is it sound?)
+2. Evidence/Reasoning (Is it persuasive?)
+3. Relevance (Does it answer the topic?)
+4. Originality (Does it offer a unique insight?)
+
+OUTPUT:
+Return ONLY a JSON object:
+{
+  "score": number, // 0.0 to 10.0 (one decimal place)
+  "reasoning": string // Max 15 words explaining the score
+}`;
+}

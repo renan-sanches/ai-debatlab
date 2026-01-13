@@ -1,4 +1,4 @@
-import { serial, pgEnum, pgTable, text, timestamp, varchar, boolean, json, integer } from "drizzle-orm/pg-core";
+import { serial, pgEnum, pgTable, text, timestamp, varchar, boolean, json, integer, real } from "drizzle-orm/pg-core";
 
 /**
  * Enums for PostgreSQL
@@ -92,6 +92,8 @@ export const responses = pgTable("responses", {
   content: text("content").notNull(),
   isDevilsAdvocate: boolean("is_devils_advocate").default(false).notNull(),
   responseOrder: integer("response_order").notNull(),
+  score: real("score"), // 0.0 - 10.0
+  scoreReasoning: text("score_reasoning"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

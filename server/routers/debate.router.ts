@@ -18,6 +18,7 @@ import {
 } from "../prompts";
 import { extractPdfForPrompt } from "../pdfExtractor";
 import { assignRandomAvatars } from "../config/avatarConfig";
+import { evaluateResponse } from "../services/scoringService";
 
 /**
  * Generate a short, descriptive title for a debate question
@@ -296,6 +297,13 @@ export const debateRouter = router({
         isDevilsAdvocate,
         responseOrder: input.responseOrder,
       });
+
+      // Trigger async scoring
+      if (model) {
+        evaluateResponse(responseId, content, question, model.name).catch(e =>
+          console.error("[Scoring Trigger Failed]", e)
+        );
+      }
 
       return {
         id: responseId,

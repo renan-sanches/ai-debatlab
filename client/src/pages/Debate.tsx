@@ -23,8 +23,15 @@ import {
   PlusCircle,
   ArrowUp,
   ChevronDown,
-  Map as MapIcon // Renamed to avoid confusion if needed, though not strictly necessary
+  Map as MapIcon, // Renamed to avoid confusion if needed, though not strictly necessary
+  HelpCircle
 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { VisualDialecticMap } from "@/components/debate/VisualDialecticMap";
 import { toast } from "sonner";
 import { Streamdown } from "streamdown";
@@ -43,6 +50,8 @@ interface ResponseCardProps {
   voteCount?: number;
   isStreaming?: boolean;
   isActive?: boolean;
+  score?: number | null;
+  scoreReasoning?: string | null;
   modelAvatars?: Record<string, string> | null;
 }
 
@@ -55,6 +64,8 @@ function ResponseCard({
   voteCount,
   isStreaming = false,
   isActive = false,
+  score,
+  scoreReasoning,
   modelAvatars
 }: ResponseCardProps) {
   const model = AI_MODELS.find(m => m.id === modelId) || getModelById(modelId);
@@ -106,6 +117,46 @@ function ResponseCard({
             )}
           </div>
         </div>
+
+
+        {/* Score Badge */}
+        {!isActive && !isStreaming && (
+          <div className="flex items-center">
+            {score !== undefined && score !== null ? (
+              <TooltipProvider>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <div className="cursor-help flex flex-col items-end">
+                      <div className="text-[10px] text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest mb-0.5 flex items-center gap-1">
+                        AI Score
+                      </div>
+                      <div className={`text-2xl font-black ${score >= 8 ? 'text-green-500 dark:text-green-400' :
+                          score >= 6 ? 'text-blue-500 dark:text-blue-400' :
+                            'text-amber-500 dark:text-amber-400'
+                        }`}>
+                        {score.toFixed(1)}
+                      </div>
+                    </div>
+                  </TooltipTrigger>
+                  {scoreReasoning && (
+                    <TooltipContent className="max-w-xs bg-slate-900 text-white border-slate-800 p-3 text-xs leading-normal">
+                      <p className="font-bold mb-1 text-slate-300">Judge's Reasoning:</p>
+                      {scoreReasoning}
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+            ) : (
+              <div className="flex flex-col items-end opacity-50">
+                <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-0.5">Rating</div>
+                <div className="flex items-center gap-1.5 text-xs font-medium text-slate-500">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  <span>Evaluating...</span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </div>
       <div className={`p-6 flex-1 prose prose-slate dark:prose-invert max-w-none ${!isActive && !isStreaming ? 'opacity-80' : ''}`}>
         <div className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
@@ -132,7 +183,7 @@ function ResponseCard({
           View Logs <span className="material-symbols-rounded text-sm">open_in_new</span>
         </button>
       </div>
-    </div>
+    </div >
   );
 }
 
@@ -508,6 +559,8 @@ export default function Debate() {
                       isDevilsAdvocate={response.isDevilsAdvocate}
                       timestamp={response.createdAt}
                       voteCount={voteCountsByModel[response.modelId] || 0}
+                      score={response.score}
+                      scoreReasoning={response.scoreReasoning}
                       modelAvatars={debate?.modelAvatars}
                     />
                   </div>
