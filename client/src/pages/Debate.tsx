@@ -30,7 +30,6 @@ import { toast } from "sonner";
 import { Streamdown } from "streamdown";
 import { AI_MODELS, getModelById } from "../../../shared/models";
 import { useStreamingResponse } from "@/hooks/useStreamingResponse";
-import DashboardLayout from "@/components/DashboardLayout";
 
 import { DiscourseAnalyticsWidget } from "@/components/debate/DiscourseAnalyticsWidget";
 import { getModelAvatar } from "@/config/avatarConfig";
@@ -44,7 +43,6 @@ interface ResponseCardProps {
   voteCount?: number;
   isStreaming?: boolean;
   isActive?: boolean;
-  score?: number;
   modelAvatars?: Record<string, string> | null;
 }
 
@@ -57,11 +55,21 @@ function ResponseCard({
   voteCount,
   isStreaming = false,
   isActive = false,
-  score = 9.4,
   modelAvatars
 }: ResponseCardProps) {
   const model = AI_MODELS.find(m => m.id === modelId) || getModelById(modelId);
   const avatar = getModelAvatar(modelId, modelAvatars);
+
+  // Debug: Log avatar information
+  useEffect(() => {
+    console.log('[Avatar Debug]', {
+      modelId,
+      modelName,
+      modelAvatars,
+      resolvedAvatar: avatar,
+      isCustomAvatar: avatar.startsWith('/avatars/')
+    });
+  }, [modelId, modelAvatars, avatar, modelName]);
 
   return (
     <div className={`flex flex-col bg-white dark:bg-card rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden transition-all transform hover:scale-[1.005] shadow-xl relative z-10 ${isActive ? 'active-speaker' : 'dark:hover:shadow-black/40'}`}>
@@ -72,6 +80,14 @@ function ResponseCard({
               src={avatar}
               alt={modelName}
               className={`w-10 h-10 rounded-lg shadow-sm object-cover ${!isActive && !isStreaming ? 'grayscale opacity-80' : ''}`}
+              onError={(e) => {
+                console.error('[Avatar Load Error]', {
+                  modelId,
+                  modelName,
+                  attemptedSrc: avatar,
+                  error: e
+                });
+              }}
             />
             {isActive && (
               <div className="absolute -bottom-1 -right-1 bg-blue-500 w-3 h-3 rounded-full border-2 border-white dark:border-[#151921]"></div>
@@ -88,12 +104,6 @@ function ResponseCard({
                 {isStreaming ? 'Synthesizing...' : 'Waiting'}
               </span>
             )}
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">Score</div>
-          <div className={`text-2xl font-black ${isActive ? 'text-blue-600 dark:text-blue-400' : 'text-slate-400 dark:text-slate-600'}`}>
-            {score.toFixed(1)}
           </div>
         </div>
       </div>
@@ -310,17 +320,42 @@ export default function Debate() {
 
   if (!debate) {
     return (
-      <DashboardLayout>
-        <div className="h-full flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      </DashboardLayout>
+      <div className="min-h-screen bg-slate-50 dark:bg-[#0B0E14] flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
     );
   }
 
   return (
-    <DashboardLayout>
-      <div className="flex h-[calc(100vh-64px)] overflow-hidden">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0E14] flex flex-col">
+      {/* Custom Header */}
+      <header className="bg-white dark:bg-card border-b border-slate-200 dark:border-border-dark px-6 py-4 flex items-center justify-between sticky top-0 z-30">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => navigate("/")}
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="h-5 w-5 text-slate-600 dark:text-slate-400" />
+          </button>
+          <div>
+            <h1 className="font-bold text-lg text-slate-900 dark:text-white">
+              {debate.title || debate.question}
+            </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Moderated by: <strong>{user?.name || 'User'}</strong> • {debate.rounds?.length || 0} rounds
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={handleExport}
+          className="px-4 py-2 rounded-lg border border-slate-200 dark:border-border-dark hover:bg-slate-50 dark:hover:bg-surface-dark-lighter text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors flex items-center gap-2"
+        >
+          <Download className="h-4 w-4" />
+          Export
+        </button>
+      </header>
+
+      <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
         <aside className="w-72 border-r border-slate-200 dark:border-border-dark hidden lg:flex flex-col p-4 bg-white dark:bg-background overflow-y-auto custom-scrollbar">
           <div className="mb-8">
@@ -628,7 +663,7 @@ export default function Debate() {
             </div>
           </div>
         </main>
-      </div >
-    </DashboardLayout >
+      </div>
+    </div>
   );
 }
