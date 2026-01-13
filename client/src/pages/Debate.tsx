@@ -111,6 +111,12 @@ function ResponseCard({
           <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
             <span className="material-symbols-rounded text-[20px]">thumb_down</span>
           </button>
+          {voteCount !== undefined && voteCount > 0 && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/30 rounded-lg">
+              <span className="material-symbols-rounded text-amber-600 dark:text-amber-400 text-[16px]">emoji_events</span>
+              <span className="text-xs font-bold text-amber-700 dark:text-amber-300">{voteCount} {voteCount === 1 ? 'vote' : 'votes'}</span>
+            </div>
+          )}
         </div>
         <button className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1 transition-colors uppercase tracking-wide">
           View Logs <span className="material-symbols-rounded text-sm">open_in_new</span>
@@ -182,6 +188,15 @@ export default function Debate() {
   const currentRound = debate?.rounds?.[activeRoundIndex];
   const isViewingLatestRound = activeRoundIndex === latestRoundIndex;
   const allResponsesComplete = currentRound?.responses?.length === debate?.participantModels?.length;
+
+  // Calculate vote counts per model for current round
+  const voteCountsByModel: Record<string, number> = {};
+  if (currentRound?.votes) {
+    currentRound.votes.forEach((vote: any) => {
+      const votedForId = vote.votedForModelId;
+      voteCountsByModel[votedForId] = (voteCountsByModel[votedForId] || 0) + 1;
+    });
+  }
 
   useEffect(() => {
     if (
@@ -346,12 +361,12 @@ export default function Debate() {
 
 
             {/* Discourse Analytics Widget */}
-            {currentRound && (
+            {currentRound?.discourseAnalytics && (
               <div className="mb-6">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-3 px-2">Live Analytics</h3>
                 <DiscourseAnalyticsWidget
                   analytics={currentRound.discourseAnalytics as any}
-                  isLoading={isGenerating || generateModerator.status === "pending"}
+                  isLoading={false}
                 />
               </div>
             )}
@@ -369,12 +384,28 @@ export default function Debate() {
                 </div>
                 <button
                   onClick={async () => {
-                    const result = await endDebate.mutateAsync({ debateId, useUserApiKey });
-                    setFinalResults(result); setShowFinalResults(true); await refetch();
+                    toast.info("Ending debate session...");
+                    try {
+                      const result = await endDebate.mutateAsync({ debateId, useUserApiKey });
+                      setFinalResults(result);
+                      setShowFinalResults(true);
+                      await refetch();
+                      toast.success("Debate session ended successfully!");
+                    } catch (error) {
+                      toast.error("Failed to end debate: " + (error as Error).message);
+                    }
                   }}
-                  className="w-full text-xs font-bold uppercase tracking-wide border border-red-500/20 text-red-500 py-2.5 rounded-lg hover:bg-red-500/10 transition-colors"
+                  disabled={endDebate.status === "pending"}
+                  className="w-full text-xs font-bold uppercase tracking-wide border border-red-500/20 text-red-500 py-2.5 rounded-lg hover:bg-red-500/10 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  End Session
+                  {endDebate.status === "pending" ? (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Ending...
+                    </>
+                  ) : (
+                    "End Session"
+                  )}
                 </button>
               </div>
             </div>
@@ -441,6 +472,7 @@ export default function Debate() {
                       content={response.content}
                       isDevilsAdvocate={response.isDevilsAdvocate}
                       timestamp={response.createdAt}
+                      voteCount={voteCountsByModel[response.modelId] || 0}
                       modelAvatars={debate?.modelAvatars}
                     />
                   </div>
@@ -456,6 +488,7 @@ export default function Debate() {
                       isDevilsAdvocate={debate.devilsAdvocateEnabled && debate.devilsAdvocateModel === streamingModelId}
                       isStreaming={true}
                       isActive={true}
+                      voteCount={0}
                       modelAvatars={debate?.modelAvatars}
                     />
                   </div>
