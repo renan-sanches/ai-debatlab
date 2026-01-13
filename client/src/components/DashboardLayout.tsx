@@ -6,37 +6,35 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarProvider,
-  SidebarTrigger,
-  useSidebar,
-} from "@/components/ui/sidebar";
 import { getLoginUrl } from "@/const";
-import { useIsMobile } from "@/hooks/useMobile";
 import { useTheme } from "@/contexts/ThemeContext";
-import { LayoutDashboard, LogOut, PanelLeft, Users, Moon, Sun, Plus, User2, Trophy } from "lucide-react";
+import {
+  LayoutDashboard,
+  LogOut,
+  History,
+  Moon,
+  Sun,
+  Plus,
+  User2,
+  Trophy,
+  Settings,
+  ChevronLeft,
+} from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
+import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "./ui/button";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
-  { icon: Users, label: "History", path: "/library" },
+  { icon: History, label: "History", path: "/library" },
+  { icon: Trophy, label: "Leaderboard", path: "/leaderboard" },
 ];
 
 const SIDEBAR_WIDTH_KEY = "sidebar-width";
-const DEFAULT_WIDTH = 280;
+const DEFAULT_WIDTH = 256;
 const MIN_WIDTH = 200;
-const MAX_WIDTH = 480;
+const MAX_WIDTH = 320;
 
 export default function DashboardLayout({
   children,
@@ -47,6 +45,7 @@ export default function DashboardLayout({
     const saved = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const { loading, user } = useAuth();
 
   useEffect(() => {
@@ -54,7 +53,7 @@ export default function DashboardLayout({
   }, [sidebarWidth]);
 
   if (loading) {
-    return <DashboardLayoutSkeleton />
+    return <DashboardLayoutSkeleton />;
   }
 
   if (!user) {
@@ -62,11 +61,15 @@ export default function DashboardLayout({
       <div className="flex items-center justify-center min-h-screen bg-background text-foreground">
         <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
           <div className="flex flex-col items-center gap-6">
-            <h1 className="text-2xl font-semibold tracking-tight text-center">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20">
+              <span className="material-symbols-outlined text-2xl">analytics</span>
+            </div>
+            <h1 className="text-2xl font-bold tracking-tight text-center">
               Sign in to continue
             </h1>
             <p className="text-sm text-muted-foreground text-center max-w-sm">
-              Access to this dashboard requires authentication. Continue to launch the login flow.
+              Access to this dashboard requires authentication. Continue to
+              launch the login flow.
             </p>
           </div>
           <Button
@@ -74,7 +77,7 @@ export default function DashboardLayout({
               window.location.href = getLoginUrl();
             }}
             size="lg"
-            className="w-full shadow-lg hover:shadow-xl transition-all"
+            className="w-full bg-primary hover:bg-primary/90 shadow-lg shadow-blue-500/20"
           >
             Sign in
           </Button>
@@ -84,49 +87,44 @@ export default function DashboardLayout({
   }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": `${sidebarWidth}px`,
-        } as CSSProperties
-      }
+    <DashboardLayoutContent
+      sidebarWidth={sidebarWidth}
+      setSidebarWidth={setSidebarWidth}
+      isCollapsed={isCollapsed}
+      setIsCollapsed={setIsCollapsed}
     >
-      <DashboardLayoutContent setSidebarWidth={setSidebarWidth}>
-        {children}
-      </DashboardLayoutContent>
-    </SidebarProvider>
+      {children}
+    </DashboardLayoutContent>
   );
 }
 
 type DashboardLayoutContentProps = {
   children: React.ReactNode;
+  sidebarWidth: number;
   setSidebarWidth: (width: number) => void;
+  isCollapsed: boolean;
+  setIsCollapsed: (collapsed: boolean) => void;
 };
 
 function DashboardLayoutContent({
   children,
+  sidebarWidth,
   setSidebarWidth,
+  isCollapsed,
+  setIsCollapsed,
 }: DashboardLayoutContentProps) {
   const { user, logout } = useAuth();
   const [location, setLocation] = useLocation();
-  const { state, toggleSidebar } = useSidebar();
   const { theme, toggleTheme } = useTheme();
-  const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const isMobile = useIsMobile();
-
-  useEffect(() => {
-    if (isCollapsed) {
-      setIsResizing(false);
-    }
-  }, [isCollapsed]);
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing) return;
 
-      const sidebarLeft = sidebarRef.current?.getBoundingClientRect().left ?? 0;
+      const sidebarLeft =
+        sidebarRef.current?.getBoundingClientRect().left ?? 0;
       const newWidth = e.clientX - sidebarLeft;
       if (newWidth >= MIN_WIDTH && newWidth <= MAX_WIDTH) {
         setSidebarWidth(newWidth);
@@ -152,154 +150,216 @@ function DashboardLayoutContent({
     };
   }, [isResizing, setSidebarWidth]);
 
+  const actualWidth = isCollapsed ? 72 : sidebarWidth;
+
   return (
-    <div className="flex flex-col min-h-screen w-full">
-      {/* Premium Header */}
-      <header className="h-20 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0B1120] flex items-center justify-between px-6 sticky top-0 z-[60]">
-        <button onClick={() => setLocation("/")} className="flex items-center gap-2 hover:opacity-80 transition-opacity">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-primary/20">
-            <span className="material-symbols-outlined font-bold text-lg">query_stats</span>
+    <div className="flex h-screen w-full overflow-hidden bg-background">
+      {/* Sidebar */}
+      <aside
+        ref={sidebarRef}
+        style={{ width: actualWidth } as CSSProperties}
+        className="h-full bg-white dark:bg-[#05080f] border-r border-border flex flex-col justify-between flex-shrink-0 transition-all duration-200 relative z-20"
+      >
+        <div>
+          {/* Logo */}
+          <div className="h-16 flex items-center px-6 border-b border-border">
+            <button
+              onClick={() => setLocation("/")}
+              className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+            >
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-500/20 flex-shrink-0">
+                <span className="material-symbols-outlined text-sm">analytics</span>
+              </div>
+              {!isCollapsed && (
+                <span className="text-lg font-bold tracking-tight text-foreground">
+                  Debate<span className="text-primary">Lab</span>
+                </span>
+              )}
+            </button>
           </div>
-          <span className="text-xl font-extrabold tracking-tight dark:text-white hidden sm:block">
-            Debate<span className="text-primary">Lab</span>
-          </span>
+
+          {/* New Debate Button */}
+          <div className="p-4">
+            <Button
+              onClick={() => setLocation("/")}
+              className={`bg-primary hover:bg-primary/90 text-white font-medium flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/20 rounded-xl h-11 ${
+                isCollapsed ? "w-11 p-0" : "w-full"
+              }`}
+            >
+              <Plus className="h-4 w-4 flex-shrink-0" />
+              {!isCollapsed && <span>New Debate</span>}
+            </Button>
+          </div>
+
+          {/* Navigation */}
+          <nav className="px-3 space-y-1">
+            {!isCollapsed && (
+              <p className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Navigation
+              </p>
+            )}
+            {menuItems.map((item) => {
+              const isActive =
+                location === item.path ||
+                (item.path === "/" && location === "/");
+              return (
+                <button
+                  key={item.path}
+                  onClick={() => setLocation(item.path)}
+                  className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-lg w-full transition-colors relative ${
+                    isActive
+                      ? "text-primary bg-blue-50 dark:bg-blue-900/20"
+                      : "text-muted-foreground hover:bg-accent hover:text-foreground"
+                  } ${isCollapsed ? "justify-center" : ""}`}
+                  title={isCollapsed ? item.label : undefined}
+                >
+                  {isActive && !isCollapsed && (
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-primary rounded-r-full" />
+                  )}
+                  <item.icon
+                    className={`h-5 w-5 flex-shrink-0 ${
+                      isActive ? "text-primary" : ""
+                    }`}
+                  />
+                  {!isCollapsed && <span>{item.label}</span>}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Footer */}
+        <div className="p-4 border-t border-border">
+          {!isCollapsed ? (
+            <div className="bg-muted/50 rounded-xl p-3 border border-border">
+              <p className="text-xs text-muted-foreground font-medium mb-1">
+                VERSION
+              </p>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-foreground font-semibold">
+                  DebateLab v1.4.2
+                </span>
+                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+              </div>
+            </div>
+          ) : (
+            <div className="flex justify-center">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+            </div>
+          )}
+        </div>
+
+        {/* Collapse Toggle */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="absolute -right-3 top-20 w-6 h-6 bg-card border border-border rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors shadow-sm"
+        >
+          <ChevronLeft
+            className={`h-3 w-3 transition-transform ${
+              isCollapsed ? "rotate-180" : ""
+            }`}
+          />
         </button>
 
-        <div className="flex items-center gap-4">
-          <div className="hidden md:flex items-center bg-slate-100 dark:bg-slate-800/50 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest border border-slate-200 dark:border-slate-700/50">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse mr-2"></span>
-            <span className="text-slate-500 dark:text-slate-400 mr-2 uppercase">Status:</span>
-            <span className="text-primary">Ready</span>
-          </div>
-
-          <button
-            className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-slate-600 dark:text-slate-300"
-            onClick={toggleTheme}
-          >
-            {theme === "dark" ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-          </button>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button className="flex items-center gap-3 rounded-full pl-1 pr-4 py-1 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
-                <Avatar className="h-8 w-8 border border-white dark:border-slate-700">
-                  <AvatarFallback className="text-[10px] font-bold bg-primary text-white">
-                    {user?.name?.charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="hidden sm:block text-left">
-                  <p className="text-xs font-bold leading-none text-slate-900 dark:text-white">{user?.name || "User"}</p>
-                  <p className="text-[10px] font-medium text-slate-500 mt-0.5">Premium Plan</p>
-                </div>
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2">
-              <DropdownMenuItem
-                onClick={() => setLocation("/account")}
-                className="cursor-pointer rounded-xl p-3"
-              >
-                <User2 className="mr-3 h-4 w-4" />
-                <span className="font-bold text-sm">Account</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => setLocation("/leaderboard")}
-                className="cursor-pointer rounded-xl p-3"
-              >
-                <Trophy className="mr-3 h-4 w-4" />
-                <span className="font-bold text-sm">Leaderboard</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={logout}
-                className="cursor-pointer text-destructive focus:text-destructive rounded-xl p-3"
-              >
-                <LogOut className="mr-3 h-4 w-4" />
-                <span className="font-bold text-sm">Sign out</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </header>
-
-      <div className="flex flex-1 overflow-hidden">
-        <div className="relative" ref={sidebarRef}>
-          <Sidebar
-            collapsible="icon"
-            className="border-r border-border bg-sidebar top-20"
-            disableTransition={isResizing}
-          >
-            <SidebarHeader className="h-16 justify-center">
-              <div className="flex items-center gap-3 px-2 transition-all w-full">
-                <button
-                  onClick={toggleSidebar}
-                  className="h-8 w-8 flex items-center justify-center hover:bg-accent rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-ring shrink-0"
-                  aria-label="Toggle navigation"
-                >
-                  <PanelLeft className="h-4 w-4 text-muted-foreground" />
-                </button>
-                {!isCollapsed ? (
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                      Navigation
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-            </SidebarHeader>
-
-            <SidebarContent className="gap-2 px-2">
-              <div className="mb-4">
-                <Button className="w-full bg-primary hover:bg-primary/90 text-white font-semibold flex items-center justify-center gap-2 rounded-xl h-11 transition-all shadow-lg shadow-primary/20" onClick={() => setLocation("/")}>
-                  <Plus className="h-4 w-4" />
-                  {!isCollapsed && <span>New Debate</span>}
-                </Button>
-              </div>
-
-              <SidebarMenu>
-                {menuItems.map(item => {
-                  const isActive = location === item.path;
-                  return (
-                    <SidebarMenuItem key={item.path}>
-                      <SidebarMenuButton
-                        isActive={isActive}
-                        onClick={() => setLocation(item.path)}
-                        tooltip={item.label}
-                        className={`h-11 transition-all rounded-xl ${isActive ? "bg-accent text-primary" : "text-muted-foreground hover:text-foreground hover:bg-accent/50"}`}
-                      >
-                        <item.icon
-                          className={`h-4 w-4 ${isActive ? "text-primary" : ""}`}
-                        />
-                        <span className="font-medium">{item.label}</span>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarContent>
-
-            <SidebarFooter className="p-4 border-t border-border">
-              {!isCollapsed && (
-                <div className="bg-muted/30 rounded-xl p-3 border border-border">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">Version</p>
-                  <p className="text-xs text-foreground font-medium">DebateLab v1.4.2</p>
-                </div>
-              )}
-            </SidebarFooter>
-          </Sidebar>
+        {/* Resize Handle */}
+        {!isCollapsed && (
           <div
-            className={`absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/20 transition-colors ${isCollapsed ? "hidden" : ""}`}
-            onMouseDown={() => {
-              if (isCollapsed) return;
-              setIsResizing(true);
-            }}
+            className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/20 transition-colors"
+            onMouseDown={() => setIsResizing(true)}
             style={{ zIndex: 50 }}
           />
-        </div>
+        )}
+      </aside>
 
-        <SidebarInset className="bg-background">
-          <main className="flex-1 overflow-y-auto custom-scrollbar pt-6">
-            {children}
-          </main>
-        </SidebarInset>
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        {/* Header */}
+        <header className="h-16 border-b border-border bg-white/80 dark:bg-[#05080f]/80 backdrop-blur-md flex items-center justify-between px-6 z-10 sticky top-0 flex-shrink-0">
+          <div className="flex items-center gap-4">
+            {/* Breadcrumb or context can go here */}
+          </div>
+
+          <div className="flex items-center gap-4">
+            {/* Status Badge */}
+            <div className="hidden md:flex items-center px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse" />
+              <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-wide">
+                STATUS: READY
+              </span>
+            </div>
+
+            {/* Theme Toggle */}
+            <button
+              className="w-8 h-8 rounded-full flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+              onClick={toggleTheme}
+            >
+              {theme === "dark" ? (
+                <Sun className="h-5 w-5" />
+              ) : (
+                <Moon className="h-5 w-5" />
+              )}
+            </button>
+
+            {/* User Menu */}
+            <div className="flex items-center gap-3 pl-4 border-l border-border">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-3 rounded-full hover:opacity-80 transition-opacity">
+                    <div className="hidden lg:block text-right">
+                      <p className="text-sm font-semibold text-foreground leading-none">
+                        {user?.name || "User"}
+                      </p>
+                      <p className="text-[10px] text-primary mt-0.5 font-medium">
+                        Premium Plan
+                      </p>
+                    </div>
+                    <Avatar className="h-9 w-9 border-2 border-white dark:border-card shadow-lg shadow-blue-500/20">
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-sm">
+                        {user?.name?.charAt(0).toUpperCase() || "U"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 rounded-xl p-2"
+                >
+                  <DropdownMenuItem
+                    onClick={() => setLocation("/account")}
+                    className="cursor-pointer rounded-lg p-3"
+                  >
+                    <User2 className="mr-3 h-4 w-4" />
+                    <span className="font-medium text-sm">Account</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setLocation("/settings")}
+                    className="cursor-pointer rounded-lg p-3"
+                  >
+                    <Settings className="mr-3 h-4 w-4" />
+                    <span className="font-medium text-sm">Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setLocation("/leaderboard")}
+                    className="cursor-pointer rounded-lg p-3"
+                  >
+                    <Trophy className="mr-3 h-4 w-4" />
+                    <span className="font-medium text-sm">Leaderboard</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={logout}
+                    className="cursor-pointer text-destructive focus:text-destructive rounded-lg p-3"
+                  >
+                    <LogOut className="mr-3 h-4 w-4" />
+                    <span className="font-medium text-sm">Sign out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content Area */}
+        <main className="flex-1 overflow-y-auto custom-scrollbar">{children}</main>
       </div>
     </div>
   );
