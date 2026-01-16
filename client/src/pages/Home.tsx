@@ -162,7 +162,7 @@ export default function Home() {
           </p>
 
           {/* Main Form Card */}
-          <div className="w-full bg-white dark:bg-card rounded-3xl border border-slate-200 dark:border-slate-800 p-1 shadow-2xl shadow-black/5 dark:shadow-black/20 ring-1 ring-white/50 dark:ring-white/5">
+          <div className="w-full bg-white dark:bg-[#0f1623] rounded-3xl border border-slate-200 dark:border-slate-800 p-1 shadow-2xl shadow-black/5 dark:shadow-black/20 ring-1 ring-white/50 dark:ring-white/5">
             <div className="p-6 md:p-8 rounded-[1.25rem] bg-gradient-to-b from-transparent to-slate-50 dark:to-slate-900/50">
               {/* Topic Input */}
               <div className="mb-8">
@@ -173,13 +173,23 @@ export default function Home() {
                   Debate Topic
                 </label>
                 <div className="relative group">
-                  <textarea
-                    className="w-full bg-slate-50 dark:bg-[#0b101b] border border-slate-200 dark:border-slate-800 rounded-xl px-5 py-4 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none shadow-sm group-hover:border-slate-300 dark:group-hover:border-slate-700 resize-none min-h-[100px]"
+                  <input
+                    className="w-full bg-slate-50 dark:bg-[#0b101b] border border-slate-200 dark:border-slate-800 rounded-xl px-5 py-4 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none shadow-sm group-hover:border-slate-300 dark:group-hover:border-slate-700"
                     placeholder="What would you like to explore? (e.g., The impact of AI on creative industries)"
+                    type="text"
                     value={question}
                     onChange={(e) => setQuestion(e.target.value)}
                     onKeyDown={handleKeyDown}
                   />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden group-focus-within:block">
+                    <button
+                      onClick={handleStartDebate}
+                      disabled={isLoading}
+                      className="p-2 rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors disabled:opacity-50"
+                    >
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -192,12 +202,12 @@ export default function Home() {
                     Panel Configuration
                   </label>
                   <span className="text-xs text-slate-400">
-                    {selectedModels.length}/6 selected
+                    Quick Select ({selectedModels.length}/6 selected)
                   </span>
                 </div>
 
                 {/* Model Selector */}
-                <div className="glass-panel p-4 rounded-2xl border border-slate-200 dark:border-slate-800 mb-6">
+                <div className="mb-6">
                   <ModelSelector
                     selectedModels={selectedModels}
                     onSelectionChange={setSelectedModels}
