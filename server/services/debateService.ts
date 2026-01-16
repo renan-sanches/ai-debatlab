@@ -326,9 +326,6 @@ export async function getUserApiKeyForModel(
   if (provider === "anthropic" || provider === "openai" || provider === "google") {
     const providerKey = await getUserApiKeyByProvider(userId, provider);
     if (providerKey) {
-      // Trigger async scoring
-      evaluateResponse(newResponseId, content, debate.question, modelName).catch(console.error);
-
       return {
         userApiKey: providerKey.apiKey,
         apiProvider: provider,

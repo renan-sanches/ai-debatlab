@@ -32,6 +32,7 @@ import { AI_MODELS, getModelById } from "../../../shared/models";
 import { useStreamingResponse } from "@/hooks/useStreamingResponse";
 import { DiscourseAnalyticsWidget } from "@/components/debate/DiscourseAnalyticsWidget";
 import { getModelAvatar } from "@/config/avatarConfig";
+import { jsPDF } from "jspdf";
 
 interface ResponseCardProps {
   modelId: string;
@@ -381,8 +382,146 @@ export default function Debate() {
   };
 
   const handleExport = () => {
-    if (!debate) return;
-    toast.info("Exporting transcript...");
+    if (!debate || !debate.rounds || debate.rounds.length === 0) {
+      toast.error("No debate data to export");
+      return;
+    }
+
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const margin = 15;
+      const maxWidth = pageWidth - 2 * margin;
+      let yPosition = margin;
+
+      // Helper function to add text with word wrapping
+      const addText = (text: string, fontSize: number, isBold: boolean = false, color: [number, number, number] = [0, 0, 0]) => {
+        doc.setFontSize(fontSize);
+        doc.setFont("helvetica", isBold ? "bold" : "normal");
+        doc.setTextColor(color[0], color[1], color[2]);
+
+        const lines = doc.splitTextToSize(text, maxWidth);
+
+        // Check if we need a new page
+        if (yPosition + (lines.length * fontSize * 0.5) > pageHeight - margin) {
+          doc.addPage();
+          yPosition = margin;
+        }
+
+        doc.text(lines, margin, yPosition);
+        yPosition += lines.length * fontSize * 0.5 + 2;
+      };
+
+      // Add line
+      const addLine = () => {
+        if (yPosition + 5 > pageHeight - margin) {
+          doc.addPage();
+          yPosition = margin;
+        }
+        doc.setDrawColor(200, 200, 200);
+        doc.line(margin, yPosition, pageWidth - margin, yPosition);
+        yPosition += 8;
+      };
+
+      // Title
+      addText("AI DebateLab Transcript", 20, true, [37, 99, 235]);
+      yPosition += 5;
+
+      // Debate question
+      addText("Question:", 14, true, [51, 65, 85]);
+      addText(debate.question, 11, false);
+      yPosition += 3;
+
+      // Metadata
+      const createdDate = new Date(debate.createdAt).toLocaleString();
+      addText(`Date: ${createdDate}`, 9, false, [100, 116, 139]);
+      addText(`Total Rounds: ${debate.rounds.length}`, 9, false, [100, 116, 139]);
+      yPosition += 5;
+
+      addLine();
+
+      // Process each round
+      debate.rounds.forEach((round, roundIndex) => {
+        // Round header
+        addText(`Round ${round.roundNumber}`, 16, true, [59, 130, 246]);
+
+        if (round.followUpQuestion) {
+          addText("Follow-up Question:", 11, true);
+          addText(round.followUpQuestion, 10, false);
+          yPosition += 3;
+        }
+
+        // Responses
+        if (round.responses && round.responses.length > 0) {
+          round.responses.forEach((response, idx) => {
+            const model = AI_MODELS.find(m => m.id === response.modelId) || getModelById(response.modelId);
+
+            // Model name and metadata
+            const modelHeader = `${response.modelName}${response.isDevilsAdvocate ? " 👹 (Devil's Advocate)" : ""}`;
+            addText(modelHeader, 12, true, [30, 58, 138]);
+
+            if (response.score !== null && response.score !== undefined) {
+              addText(`Score: ${response.score}/10`, 9, false, [100, 116, 139]);
+            }
+
+            // Response content
+            addText(response.content, 10, false);
+
+            if (response.scoreReasoning) {
+              addText("Assessment:", 10, true, [71, 85, 105]);
+              addText(response.scoreReasoning, 9, false, [71, 85, 105]);
+            }
+
+            yPosition += 5;
+          });
+        }
+
+        // Moderator synthesis
+        if (round.moderatorSynthesis) {
+          addText("Moderator Synthesis", 12, true, [139, 92, 246]);
+          addText(round.moderatorSynthesis, 10, false);
+          yPosition += 3;
+        }
+
+        // Votes
+        if (round.votes && round.votes.length > 0) {
+          addText("Votes:", 11, true, [34, 197, 94]);
+          round.votes.forEach((vote) => {
+            const voteText = `${vote.voterModelId} → ${vote.votedForModelId}${vote.reason ? ": " + vote.reason : ""}`;
+            addText(voteText, 9, false, [22, 163, 74]);
+          });
+          yPosition += 3;
+        }
+
+        // Add separator between rounds (except for the last one)
+        if (roundIndex < debate.rounds.length - 1) {
+          addLine();
+        }
+      });
+
+      // Add footer with timestamp
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+          `Page ${i} of ${totalPages} • Generated by AI DebateLab`,
+          pageWidth / 2,
+          pageHeight - 10,
+          { align: "center" }
+        );
+      }
+
+      // Save the PDF
+      const filename = `debate-${debateId}-${Date.now()}.pdf`;
+      doc.save(filename);
+      toast.success("PDF exported successfully!");
+    } catch (error) {
+      console.error("Error exporting PDF:", error);
+      toast.error("Failed to export PDF: " + (error as Error).message);
+    }
   };
 
   if (!debate) {

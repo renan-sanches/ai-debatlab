@@ -1,4 +1,4 @@
-import { callLLM } from "../llm";
+import { invokeLLMWithModel } from "../llmHelper";
 
 export interface DiscourseAnalytics {
     consensusScore: number;       // 0-100: How unified the panel is
@@ -32,17 +32,25 @@ export async function calculateDiscourseAnalytics(
     const prompt = buildAnalyticsPrompt(context);
 
     try {
-        const response = await callLLM({
-            modelId: "openai/gpt-4o-mini", // Fast, cheap model for analytics
-            prompt,
+        const response = await invokeLLMWithModel({
+            model: "openai/gpt-4o-mini", // Fast, cheap model for analytics
+            messages: [
+                {
+                    role: "system",
+                    content: "You are an expert discourse analyst. Analyze debates objectively and extract structured metrics."
+                },
+                {
+                    role: "user",
+                    content: prompt
+                }
+            ],
             userApiKey,
             apiProvider,
-            systemPrompt: "You are an expert discourse analyst. Analyze debates objectively and extract structured metrics.",
-            temperature: 0.3, // Low temperature for consistent analysis
+            maxTokens: 2048,
         });
 
         // Parse JSON response
-        const analytics = parseAnalyticsResponse(response.content);
+        const analytics = parseAnalyticsResponse(response.choices[0]?.message?.content || "");
 
         return analytics;
     } catch (error) {
