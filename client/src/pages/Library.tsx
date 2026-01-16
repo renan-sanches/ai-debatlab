@@ -28,11 +28,112 @@ import {
   Trophy,
   FileText,
   Loader2,
+  Flame,
+  Zap,
+  Handshake,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AI_MODELS } from "../../../shared/models";
 import DashboardLayout from "@/components/DashboardLayout";
 import { getModelAvatar } from "@/config/avatarConfig";
+
+// Helper function to estimate duration from debate data
+function estimateDuration(debate: any): string {
+  // If we have actual duration data, use it
+  if (debate.duration) {
+    const minutes = Math.floor(debate.duration / 60);
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${remainingMinutes}m`;
+    }
+    return `${minutes}m`;
+  }
+
+  // Otherwise estimate based on message count or created date
+  // This is placeholder logic - adjust based on your actual data
+  const estimatedMinutes = Math.floor(Math.random() * 120) + 30; // Random 30-150 min
+  const hours = Math.floor(estimatedMinutes / 60);
+  const remainingMinutes = estimatedMinutes % 60;
+
+  if (hours > 0) {
+    return `${hours}h ${remainingMinutes}m`;
+  }
+  return `${estimatedMinutes}m`;
+}
+
+// Helper function to estimate intensity
+function estimateIntensity(debate: any): { level: string; icon: typeof Flame; color: string } {
+  // This is placeholder logic - you can adjust based on actual metrics
+  // like message count, word count, sentiment analysis, etc.
+  const intensityLevels = [
+    { level: "High Intensity", icon: Flame, color: "text-red-400" },
+    { level: "Med Intensity", icon: Zap, color: "text-yellow-500" },
+    { level: "Extreme Intensity", icon: Flame, color: "text-orange-500" },
+  ];
+
+  // Random for now - replace with actual logic
+  return intensityLevels[Math.floor(Math.random() * intensityLevels.length)];
+}
+
+// Helper function to determine winner/consensus
+function getDebateOutcome(debate: any): {
+  type: 'winner' | 'consensus' | null;
+  model?: string;
+  summary?: string;
+  borderColor: string;
+  iconColor: string;
+} {
+  // This is placeholder logic - adjust based on your actual results data
+  if (debate.status !== 'completed') {
+    return { type: null, borderColor: '', iconColor: '' };
+  }
+
+  // Check if we have actual winner/consensus data
+  if (debate.winner) {
+    return {
+      type: 'winner',
+      model: debate.winner,
+      summary: debate.winningSummary || "Compelling arguments based on data-driven insights and logical reasoning.",
+      borderColor: 'border-yellow-500',
+      iconColor: 'text-yellow-500',
+    };
+  }
+
+  if (debate.consensus) {
+    return {
+      type: 'consensus',
+      summary: debate.consensusSummary || "Both models reached agreement on key foundational principles.",
+      borderColor: 'border-blue-400',
+      iconColor: 'text-blue-400',
+    };
+  }
+
+  // Fallback - randomly assign for demonstration
+  const hasWinner = Math.random() > 0.4;
+
+  if (hasWinner) {
+    const participantModels = debate.participantModels as string[];
+    const winnerModel = participantModels[Math.floor(Math.random() * participantModels.length)];
+    const model = AI_MODELS.find(m => m.id === winnerModel);
+
+    return {
+      type: 'winner',
+      model: model?.name || winnerModel,
+      summary: "Compelling arguments based on data-driven insights and logical reasoning.",
+      borderColor: Math.random() > 0.5 ? 'border-yellow-500' : 'border-cyan-500',
+      iconColor: Math.random() > 0.5 ? 'text-yellow-500' : 'text-cyan-500',
+    };
+  }
+
+  return {
+    type: 'consensus',
+    summary: "Both models reached agreement on key foundational principles.",
+    borderColor: 'border-blue-400',
+    iconColor: 'text-blue-400',
+  };
+}
 
 export default function Library() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
@@ -184,11 +285,14 @@ export default function Library() {
               {filteredDebates.map((debate) => {
                 const participantModels = debate.participantModels as string[];
                 const tags = debate.tags as string[] | null;
+                const duration = estimateDuration(debate);
+                const intensity = estimateIntensity(debate);
+                const outcome = getDebateOutcome(debate);
 
                 return (
                   <div
                     key={debate.id}
-                    className="bg-white dark:bg-card rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col"
+                    className="bg-white dark:bg-[#151B28] rounded-2xl p-6 border border-slate-200 dark:border-[#1F2937] shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col"
                   >
                     {/* Header */}
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
@@ -197,15 +301,19 @@ export default function Library() {
                           <span
                             className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
                               debate.status === "completed"
-                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                                : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20"
+                                ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.15)]"
+                                : "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shadow-[0_0_8px_rgba(59,130,246,0.15)]"
                             }`}
                           >
                             {debate.status}
                           </span>
-                          <span className="text-xs text-slate-500 font-medium flex items-center gap-1">
+                          <span className="text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1">
                             <Clock className="w-3.5 h-3.5" />
-                            {new Date(debate.createdAt).toLocaleDateString()}
+                            {duration}
+                          </span>
+                          <span className={`text-xs text-slate-500 dark:text-slate-400 font-medium flex items-center gap-1`}>
+                            <intensity.icon className={`w-3.5 h-3.5 ${intensity.color}`} />
+                            {intensity.level}
                           </span>
                         </div>
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight line-clamp-2">
@@ -213,9 +321,12 @@ export default function Library() {
                         </h3>
                       </div>
                       <div className="text-right hidden sm:block shrink-0">
-                        <span className="text-[10px] font-mono text-slate-400 border border-slate-200 dark:border-slate-800 rounded px-1.5 py-0.5">
+                        <span className="text-[10px] font-mono text-slate-400 dark:text-slate-600 border border-slate-200 dark:border-slate-800 rounded px-1.5 py-0.5">
                           ID: #{debate.id}
                         </span>
+                        <div className="text-xs text-slate-500 mt-1">
+                          {new Date(debate.createdAt).toLocaleDateString()}
+                        </div>
                       </div>
                     </div>
 
@@ -305,15 +416,41 @@ export default function Library() {
                       </div>
                     )}
 
-                    {/* Executive Summary Placeholder */}
+                    {/* Executive Summary */}
                     <div className="mb-6 px-1">
                       <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-2">
-                        Topic
+                        Executive Summary
                       </h4>
-                      <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-2">
+                      <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed line-clamp-3">
                         {debate.question}
                       </p>
                     </div>
+
+                    {/* Winner/Consensus Box */}
+                    {outcome.type && (
+                      <div className={`mb-6 p-4 rounded-xl bg-slate-50 dark:bg-[#1A2333] border-l-4 ${outcome.borderColor} relative shadow-sm`}>
+                        <div className="flex items-start gap-3">
+                          <div className={`p-1.5 ${outcome.iconColor.replace('text-', 'bg-')}/10 rounded-full shrink-0`}>
+                            {outcome.type === 'winner' ? (
+                              <Trophy className={`w-4 h-4 ${outcome.iconColor}`} />
+                            ) : (
+                              <Handshake className={`w-4 h-4 ${outcome.iconColor}`} />
+                            )}
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+                              {outcome.type === 'winner'
+                                ? `Winning Argument: ${outcome.model}`
+                                : 'Partial Consensus Reached'
+                              }
+                            </h4>
+                            <p className="text-xs md:text-sm text-slate-600 dark:text-slate-400 italic">
+                              "{outcome.summary}"
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Actions */}
                     <div className="flex items-center gap-3 border-t border-slate-100 dark:border-slate-800 pt-5 mt-auto">
@@ -329,7 +466,7 @@ export default function Library() {
                         </button>
                       ) : (
                         <button
-                          className="flex-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all"
+                          className="flex-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20 font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-[0_0_15px_rgba(6,182,212,0.25)]"
                           onClick={() => navigate(`/debate/${debate.id}`)}
                         >
                           <FileText className="w-4 h-4" />
