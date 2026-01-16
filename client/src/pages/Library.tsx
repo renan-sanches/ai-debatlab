@@ -24,7 +24,18 @@ import {
 import { toast } from "sonner";
 import { AI_MODELS } from "../../../shared/models";
 import DashboardLayout from "@/components/DashboardLayout";
-import { getModelAvatar } from "@/config/avatarConfig";
+
+// Helper function to get emoji and colors for AI models
+function getModelEmoji(modelId: string): { emoji: string; bgColor: string; borderColor: string; shadowColor: string } {
+  // Match emojis to model types
+  if (modelId.includes('claude')) return { emoji: '🤖', bgColor: 'bg-purple-100 dark:bg-purple-900/20', borderColor: 'border-purple-500', shadowColor: 'shadow-[0_0_15px_rgba(168,85,247,0.25)]' };
+  if (modelId.includes('gpt')) return { emoji: '👾', bgColor: 'bg-emerald-100 dark:bg-emerald-900/20', borderColor: 'border-emerald-500', shadowColor: 'shadow-[0_0_15px_rgba(16,185,129,0.25)]' };
+  if (modelId.includes('gemini')) return { emoji: '🧠', bgColor: 'bg-blue-100 dark:bg-blue-900/20', borderColor: 'border-blue-500', shadowColor: 'shadow-[0_0_15px_rgba(59,130,246,0.25)]' };
+  if (modelId.includes('mistral')) return { emoji: '⚡', bgColor: 'bg-orange-100 dark:bg-orange-900/20', borderColor: 'border-orange-500', shadowColor: 'shadow-[0_0_15px_rgba(249,115,22,0.25)]' };
+  if (modelId.includes('llama')) return { emoji: '☢️', bgColor: 'bg-cyan-100 dark:bg-cyan-900/20', borderColor: 'border-cyan-500', shadowColor: 'shadow-[0_0_15px_rgba(6,182,212,0.25)]' };
+  // Default
+  return { emoji: '🤖', bgColor: 'bg-gray-100 dark:bg-gray-800', borderColor: 'border-gray-500', shadowColor: 'shadow-[0_0_15px_rgba(107,114,128,0.25)]' };
+}
 
 // Helper function to estimate duration from debate data
 function estimateDuration(debate: any): string {
@@ -366,31 +377,21 @@ export default function Library() {
                       />
                       {participantModels.slice(0, participantModels.length === 2 ? 1 : 2).map((modelId, index) => {
                         const model = AI_MODELS.find((m) => m.id === modelId);
-                        const avatar = getModelAvatar(
-                          modelId,
-                          debate.modelAvatars as Record<string, string> | null
-                        );
+                        const modelEmoji = getModelEmoji(modelId);
+
                         return (
                           <div
                             key={modelId}
                             className="flex flex-col items-center gap-2 z-10 relative"
                           >
                             <div
-                              className={`w-14 h-14 rounded-full border-2 flex items-center justify-center text-2xl overflow-hidden ${
+                              className={`w-14 h-14 rounded-full ${modelEmoji.bgColor} border-2 ${
                                 index === 0
                                   ? "border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.25)] ring-4 ring-purple-500/10"
                                   : "border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.25)] ring-4 ring-emerald-500/10"
-                              }`}
+                              } flex items-center justify-center text-2xl`}
                             >
-                              <img
-                                src={avatar}
-                                alt={model?.name || modelId}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src =
-                                    "/avatars/default.png";
-                                }}
-                              />
+                              {modelEmoji.emoji}
                             </div>
                             <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
                               {model?.name?.split(" ")[0] || modelId}
@@ -412,22 +413,12 @@ export default function Library() {
                           {(() => {
                             const modelId = participantModels[1];
                             const model = AI_MODELS.find((m) => m.id === modelId);
-                            const avatar = getModelAvatar(
-                              modelId,
-                              debate.modelAvatars as Record<string, string> | null
-                            );
+                            const modelEmoji = getModelEmoji(modelId);
+
                             return (
                               <>
-                                <div className="w-14 h-14 rounded-full border-2 border-emerald-500 flex items-center justify-center text-2xl shadow-[0_0_15px_rgba(16,185,129,0.25)] ring-4 ring-emerald-500/10 overflow-hidden">
-                                  <img
-                                    src={avatar}
-                                    alt={model?.name || modelId}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      (e.target as HTMLImageElement).src =
-                                        "/avatars/default.png";
-                                    }}
-                                  />
+                                <div className={`w-14 h-14 rounded-full ${modelEmoji.bgColor} border-2 border-emerald-500 flex items-center justify-center text-2xl shadow-[0_0_15px_rgba(16,185,129,0.25)] ring-4 ring-emerald-500/10`}>
+                                  {modelEmoji.emoji}
                                 </div>
                                 <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
                                   {model?.name?.split(" ")[0] || modelId}
