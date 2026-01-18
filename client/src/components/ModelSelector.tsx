@@ -267,6 +267,16 @@ export function ModelSelector({
                                   ? "text-red-500 hover:bg-red-500/10"
                                   : "text-muted-foreground hover:text-red-500 hover:bg-accent"
                               )}
+                              aria-label={
+                                isFavorite(model)
+                                  ? "Remove from favorites"
+                                  : "Add to favorites"
+                              }
+                              title={
+                                isFavorite(model)
+                                  ? "Remove from favorites"
+                                  : "Add to favorites"
+                              }
                             >
                               <Heart
                                 className="w-4 h-4"
@@ -318,8 +328,12 @@ export function ModelSelector({
                 />
                 {model?.name || modelId}
                 <button
-                  onClick={() => onSelectionChange(selectedModels.filter(id => id !== modelId))}
+                  onClick={() =>
+                    onSelectionChange(selectedModels.filter((id) => id !== modelId))
+                  }
                   className="ml-1 text-muted-foreground hover:text-foreground"
+                  aria-label={`Remove ${model?.name || modelId} from selection`}
+                  title="Remove"
                 >
                   ×
                 </button>
