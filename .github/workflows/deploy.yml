@@ -53,19 +53,24 @@ jobs:
       - name: Run tests
         run: pnpm test
 
-  # Deploy to Railway (only on main branch push)
+  # Deploy to Google Cloud Run (only on main branch push)
   deploy:
     runs-on: ubuntu-latest
     needs: [check, test]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-      
-      - name: Deploy to Railway
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service ai-debatelab
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Trigger Cloud Build
+        run: |
+          gcloud builds submit --config cloudbuild.yaml \
+            --substitutions=_DATABASE_URL="${{ secrets.DATABASE_URL }}",_SUPABASE_URL="${{ secrets.SUPABASE_URL }}",_SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}",_SUPABASE_SERVICE_ROLE_KEY="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}",_OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}",_ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}",_JWT_SECRET="${{ secrets.JWT_SECRET }}"
 
