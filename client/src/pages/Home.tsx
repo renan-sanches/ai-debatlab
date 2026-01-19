@@ -11,10 +11,18 @@ import {
   FileText,
   Check,
   ArrowRight,
-  Sparkles,
+  Lightbulb,
   Vote,
   Loader2,
+  Settings2,
+  Sparkles
 } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 export default function Home() {
   const { user, loading: authLoading, isAuthenticated } = useAuth();
@@ -32,6 +40,7 @@ export default function Home() {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
 
   // Get available models
   const { data: availableModelsData } = trpc.models.available.useQuery(
@@ -65,9 +74,14 @@ export default function Home() {
       toast.error("Please select at least 2 AI models");
       return;
     }
+    // Auto-select moderator if not selected? Or enforce it?
+    // Current logic enforces it.
     if (!moderatorModel) {
-      toast.error("Please select a moderator model");
-      return;
+       // Try to pick a neutral moderator if none selected?
+       // For now, let's just warn properly.
+       toast.error("Please select a moderator model in Advanced Settings");
+       setIsAdvancedOpen(true);
+       return;
     }
 
     let imageUrl: string | undefined;
@@ -142,242 +156,223 @@ export default function Home() {
 
   return (
     <DashboardLayout>
-      <div className="flex-1 overflow-y-auto relative">
-        {/* Background Effects */}
-        <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-blue-900/10 to-transparent pointer-events-none dark:from-blue-900/5" />
-        <div className="absolute -top-[200px] left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-primary/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="flex-1 overflow-y-auto bg-slate-50/50 dark:bg-black/20">
+        <div className="max-w-5xl mx-auto px-6 py-12 md:py-16">
 
-        <div className="max-w-4xl mx-auto px-6 py-12 flex flex-col items-center relative z-10">
           {/* Hero Section */}
-          <h1 className="text-4xl md:text-6xl font-bold text-center mb-4 text-slate-900 dark:text-white tracking-tight">
-            Start a new{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-500">
-              debate
-            </span>
-          </h1>
-          <p className="text-center text-slate-600 dark:text-slate-400 max-w-2xl mb-12 text-lg leading-relaxed">
-            Orchestrate complex discussions between top-tier AI models. Compare
-            reasoning, detect bias, and synthesize actionable insights in
-            real-time.
-          </p>
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-6xl font-bold tracking-tight mb-4 text-slate-900 dark:text-white">
+              Start a new <span className="text-blue-500">debate</span>
+            </h1>
+            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
+              Orchestrate complex discussions between top-tier AI models. Compare
+              reasoning, detect bias, and synthesize actionable insights in real-time.
+            </p>
+          </div>
 
-          {/* Main Form Card */}
-          <div className="w-full bg-white dark:bg-[#0f1623] rounded-3xl border border-slate-200 dark:border-slate-800 p-1 shadow-2xl shadow-black/5 dark:shadow-black/20 ring-1 ring-white/50 dark:ring-white/5">
-            <div className="p-6 md:p-8 rounded-[1.25rem] bg-gradient-to-b from-transparent to-slate-50 dark:to-slate-900/50">
-              {/* Topic Input */}
-              <div className="mb-8">
-                <label className="flex items-center gap-2 text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
-                  <div className="w-6 h-6 rounded-md bg-blue-500/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                    <Sparkles className="w-3.5 h-3.5" />
-                  </div>
-                  Debate Topic
-                </label>
-                <div className="relative group">
-                  <input
-                    className="w-full bg-slate-50 dark:bg-[#0b101b] border border-slate-200 dark:border-slate-800 rounded-xl px-5 py-4 text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all outline-none shadow-sm group-hover:border-slate-300 dark:group-hover:border-slate-700"
-                    placeholder="What would you like to explore? (e.g., The impact of AI on creative industries)"
-                    type="text"
-                    value={question}
-                    onChange={(e) => setQuestion(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                  />
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden group-focus-within:block">
-                    <button
-                      onClick={handleStartDebate}
-                      disabled={isLoading}
-                      className="p-2 rounded-lg bg-primary text-white hover:bg-primary-hover transition-colors disabled:opacity-50"
-                    >
-                      <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </div>
+          {/* Main Configuration Card */}
+          <div className="w-full bg-white dark:bg-[#0b101b] rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none p-6 md:p-10">
+
+            {/* Topic Input */}
+            <div className="mb-10">
+              <label className="flex items-center gap-2.5 text-sm font-semibold text-slate-900 dark:text-white mb-4">
+                <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                  <Lightbulb className="w-4 h-4" />
                 </div>
+                Debate Topic
+              </label>
+              <div className="relative">
+                <textarea
+                  className="w-full bg-slate-50 dark:bg-[#151b2d] border border-slate-200 dark:border-slate-800 rounded-2xl px-6 py-5 text-lg text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none resize-none min-h-[140px]"
+                  placeholder="What would you like to explore? (e.g., The impact of AI on creative industries)"
+                  value={question}
+                  onChange={(e) => setQuestion(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                />
+              </div>
+            </div>
+
+            {/* Panel Configuration */}
+            <div className="mb-8">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-5 gap-2">
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+                  Panel Configuration
+                </h3>
+                <span className="text-xs text-slate-400 font-medium">
+                  Quick Select ({selectedModels.length}/6 selected)
+                </span>
               </div>
 
-              <div className="h-px w-full bg-slate-200 dark:bg-slate-800 my-8" />
+              <ModelSelector
+                selectedModels={selectedModels}
+                onSelectionChange={setSelectedModels}
+                maxSelection={6}
+              />
+            </div>
 
-              {/* Panel Configuration */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider">
-                    Panel Configuration
-                  </label>
-                  <span className="text-xs text-slate-400">
-                    Quick Select ({selectedModels.length}/6 selected)
-                  </span>
-                </div>
+            {/* Footer Text */}
+            <p className="text-center text-xs text-slate-400 mb-8 pt-4">
+              AI models are configured for maximum reasoning capability. Standard usage rates apply per token.
+            </p>
 
-                {/* Model Selector */}
-                <div className="mb-6">
-                  <ModelSelector
-                    selectedModels={selectedModels}
-                    onSelectionChange={setSelectedModels}
-                    maxSelection={6}
-                  />
-                </div>
+            {/* Advanced Settings & Start Controls */}
+            <div className="border-t border-slate-200 dark:border-slate-800 pt-8">
 
-                {/* Moderator & Devil's Advocate */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-                  {/* Moderator Select */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                      Moderator Model
-                    </label>
-                    <select
-                      className="w-full bg-white dark:bg-[#0b101b] border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-primary/50 h-11 px-4 text-slate-900 dark:text-white transition-all"
-                      value={moderatorModel}
-                      onChange={(e) => setModeratorModel(e.target.value)}
-                    >
-                      <option value="">Select Moderator</option>
-                      {models
-                        ?.sort((a, b) => a.name.localeCompare(b.name))
-                        .map((m) => (
-                          <option key={m.openRouterId} value={m.openRouterId}>
-                            {m.name} ({m.provider})
-                          </option>
-                        ))}
-                    </select>
+              <Collapsible open={isAdvancedOpen} onOpenChange={setIsAdvancedOpen} className="mb-8">
+                <CollapsibleTrigger asChild>
+                  <button className="flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors">
+                    <Settings2 className="w-4 h-4" />
+                    <span>{isAdvancedOpen ? "Hide" : "Show"} Advanced Settings</span>
+                    {(!moderatorModel) && (
+                        <span className="ml-2 w-2 h-2 rounded-full bg-amber-500 animate-pulse" title="Moderator required" />
+                    )}
+                  </button>
+                </CollapsibleTrigger>
+
+                <CollapsibleContent className="mt-6 space-y-6 animate-in slide-in-from-top-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Moderator */}
+                    <div className="space-y-3">
+                      <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        Moderator Model <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        className="w-full bg-slate-50 dark:bg-[#151b2d] border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all"
+                        value={moderatorModel}
+                        onChange={(e) => setModeratorModel(e.target.value)}
+                      >
+                        <option value="">Select a Moderator</option>
+                        {models
+                          ?.sort((a, b) => a.name.localeCompare(b.name))
+                          .map((m) => (
+                            <option key={m.openRouterId} value={m.openRouterId}>
+                              {m.name}
+                            </option>
+                          ))}
+                      </select>
+                      <p className="text-xs text-slate-500">Required to manage the debate flow.</p>
+                    </div>
+
+                    {/* Devil's Advocate */}
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                         <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                           Devil's Advocate
+                         </label>
+                         <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id="da-toggle"
+                              className="accent-blue-500 w-4 h-4"
+                              checked={devilsAdvocateEnabled}
+                              onChange={(e) => setDevilsAdvocateEnabled(e.target.checked)}
+                            />
+                            <label htmlFor="da-toggle" className="text-xs text-slate-500 cursor-pointer">Enable</label>
+                         </div>
+                      </div>
+
+                      <select
+                        disabled={!devilsAdvocateEnabled}
+                        className="w-full bg-slate-50 dark:bg-[#151b2d] border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all disabled:opacity-50"
+                        value={devilsAdvocateModel}
+                        onChange={(e) => setDevilsAdvocateModel(e.target.value)}
+                      >
+                        <option value="">Select Model</option>
+                        {models
+                          ?.sort((a, b) => a.name.localeCompare(b.name))
+                          .map((m) => (
+                            <option key={m.openRouterId} value={m.openRouterId}>
+                              {m.name}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
+                    {/* Voting */}
+                    <div className="md:col-span-2">
+                        <label className="flex items-center p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-[#151b2d] cursor-pointer hover:border-blue-500/50 transition-colors">
+                            <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 mr-4">
+                                <Vote className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1">
+                                <div className="font-medium text-slate-900 dark:text-white">Enable Voting</div>
+                                <div className="text-xs text-slate-500">Allow participants to vote on arguments during the debate</div>
+                            </div>
+                            <input
+                              type="checkbox"
+                              checked={votingEnabled}
+                              onChange={(e) => setVotingEnabled(e.target.checked)}
+                              className="w-5 h-5 accent-blue-500"
+                            />
+                        </label>
+                    </div>
                   </div>
+                </CollapsibleContent>
+              </Collapsible>
 
-                  {/* Devil's Advocate Select */}
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                      Devil's Advocate
-                      <input
-                        type="checkbox"
-                        className="rounded text-primary focus:ring-primary w-3.5 h-3.5"
-                        checked={devilsAdvocateEnabled}
-                        onChange={(e) =>
-                          setDevilsAdvocateEnabled(e.target.checked)
-                        }
-                      />
-                    </label>
-                    <select
-                      disabled={!devilsAdvocateEnabled}
-                      className="w-full bg-white dark:bg-[#0b101b] border border-slate-200 dark:border-slate-800 rounded-xl text-sm focus:ring-2 focus:ring-primary/50 h-11 px-4 text-slate-900 dark:text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      value={devilsAdvocateModel}
-                      onChange={(e) => setDevilsAdvocateModel(e.target.value)}
-                    >
-                      <option value="">Select DA Model (Optional)</option>
-                      {models
-                        ?.sort((a, b) => a.name.localeCompare(b.name))
-                        .map((m) => (
-                          <option key={m.openRouterId} value={m.openRouterId}>
-                            {m.name} ({m.provider})
-                          </option>
-                        ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Voting Toggle */}
-                <div className="flex items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 mb-6">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-600 dark:text-indigo-400">
-                    <Vote className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-slate-900 dark:text-white">
-                      Enable Voting
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Allow participants to vote on arguments
-                    </p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={votingEnabled}
-                      onChange={(e) => setVotingEnabled(e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-slate-600 peer-checked:bg-primary"></div>
-                  </label>
-                </div>
-              </div>
-
-              <div className="h-px w-full bg-slate-200 dark:bg-slate-800 my-6" />
-
-              {/* Actions Row */}
+              {/* Action Bar */}
               <div className="flex items-center justify-between">
-                {/* File Upload Buttons */}
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${
-                      imageFile
-                        ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
-                        : "bg-white dark:bg-[#0b101b] border border-slate-200 dark:border-slate-800 hover:border-primary/50 text-slate-500 hover:text-primary"
-                    }`}
-                    title={imageFile ? imageFile.name : "Add Image"}
-                  >
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      className="hidden"
-                      accept="image/*"
-                      onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                    />
-                    {imageFile ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <Image className="w-4 h-4" />
-                    )}
-                  </button>
-                  <button
-                    onClick={() => pdfInputRef.current?.click()}
-                    className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all ${
-                      pdfFile
-                        ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20"
-                        : "bg-white dark:bg-[#0b101b] border border-slate-200 dark:border-slate-800 hover:border-primary/50 text-slate-500 hover:text-primary"
-                    }`}
-                    title={pdfFile ? pdfFile.name : "Add PDF"}
-                  >
-                    <input
-                      type="file"
-                      ref={pdfInputRef}
-                      className="hidden"
-                      accept="application/pdf"
-                      onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
-                    />
-                    {pdfFile ? (
-                      <Check className="w-4 h-4" />
-                    ) : (
-                      <FileText className="w-4 h-4" />
-                    )}
-                  </button>
+
+                {/* Uploads */}
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className={cn(
+                            "flex items-center justify-center w-11 h-11 rounded-xl border transition-all",
+                            imageFile
+                                ? "bg-emerald-500 border-emerald-500 text-white shadow-lg shadow-emerald-500/20"
+                                : "bg-white dark:bg-[#151b2d] border-slate-200 dark:border-slate-800 text-slate-400 hover:text-blue-500 hover:border-blue-500/50"
+                        )}
+                        title={imageFile ? imageFile.name : "Upload Image"}
+                    >
+                        {imageFile ? <Check className="w-5 h-5" /> : <Image className="w-5 h-5" />}
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept="image/*"
+                            onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                        />
+                    </button>
+
+                    <button
+                        onClick={() => pdfInputRef.current?.click()}
+                        className={cn(
+                            "flex items-center justify-center w-11 h-11 rounded-xl border transition-all",
+                            pdfFile
+                                ? "bg-blue-500 border-blue-500 text-white shadow-lg shadow-blue-500/20"
+                                : "bg-white dark:bg-[#151b2d] border-slate-200 dark:border-slate-800 text-slate-400 hover:text-blue-500 hover:border-blue-500/50"
+                        )}
+                        title={pdfFile ? pdfFile.name : "Upload PDF context"}
+                    >
+                        {pdfFile ? <Check className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
+                        <input
+                            type="file"
+                            ref={pdfInputRef}
+                            className="hidden"
+                            accept="application/pdf"
+                            onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+                        />
+                    </button>
                 </div>
 
                 {/* Start Button */}
-                <div className="flex items-center gap-3">
-                  <div className="hidden sm:flex items-center px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-2 animate-pulse" />
-                    <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 tracking-wide">
-                      READY
-                    </span>
-                  </div>
-                  <button
+                <Button
                     onClick={handleStartDebate}
                     disabled={isLoading}
-                    className="bg-primary hover:bg-primary-hover text-white h-12 px-6 rounded-xl font-bold shadow-lg shadow-blue-500/20 hover:shadow-blue-500/40 transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
+                    size="lg"
+                    className="h-14 px-8 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 font-semibold text-lg"
+                >
                     {isLoading ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                    ) : (
-                      <>
-                        Start Debate
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
-                </div>
+                        <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                    ) : null}
+                    Start Debate
+                    {!isLoading && <ArrowRight className="w-5 h-5 ml-2" />}
+                </Button>
               </div>
             </div>
-          </div>
 
-          {/* Footer Note */}
-          <p className="mt-8 text-xs text-center text-slate-500">
-            AI models are configured for maximum reasoning capability.
-            <br className="md:hidden" /> Standard usage rates apply per token.
-          </p>
+          </div>
         </div>
       </div>
     </DashboardLayout>
