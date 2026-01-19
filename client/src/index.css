@@ -52,10 +52,17 @@
   --color-surface-light: #ffffff;
   --color-surface-dark: #0f1623;
   --color-card-dark: #151b28;
+  --color-card-border-dark: #1F2937;
   --color-border-light: #e2e8f0;
   --color-border-dark: #1e293b;
   --color-neon-blue: #06b6d4;
   --color-neon-green: #10b981;
+
+  --color-text-light-primary: #1E293B;
+  --color-text-dark-primary: #F1F5F9;
+  --color-text-light-secondary: #64748B;
+  --color-text-dark-secondary: #94A3B8;
+  --color-primary-hover: #2563EB;
 }
 
 :root {
@@ -242,6 +249,10 @@
 
   .shadow-neon-green {
     box-shadow: 0 0 15px rgba(16, 185, 129, 0.25);
+  }
+
+  .shadow-card {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
 
   /* Active Speaker Highlight */
