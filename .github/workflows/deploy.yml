@@ -72,5 +72,5 @@ jobs:
       - name: Trigger Cloud Build
         run: |
           gcloud builds submit --config cloudbuild.yaml \
-            --substitutions=_DATABASE_URL="${{ secrets.DATABASE_URL }}",_SUPABASE_URL="${{ secrets.SUPABASE_URL }}",_SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}",_SUPABASE_SERVICE_ROLE_KEY="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}",_OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}",_ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}",_JWT_SECRET="${{ secrets.JWT_SECRET }}"
+            --substitutions=COMMIT_SHA="${{ github.sha }}",_DATABASE_URL="${{ secrets.DATABASE_URL }}",_SUPABASE_URL="${{ secrets.SUPABASE_URL }}",_SUPABASE_ANON_KEY="${{ secrets.SUPABASE_ANON_KEY }}",_SUPABASE_SERVICE_ROLE_KEY="${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}",_OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}",_ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}",_JWT_SECRET="${{ secrets.JWT_SECRET }}"
 
