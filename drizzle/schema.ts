@@ -1,4 +1,4 @@
-import { serial, pgEnum, pgTable, text, timestamp, varchar, boolean, json, integer, real } from "drizzle-orm/pg-core";
+import { serial, pgEnum, pgTable, text, timestamp, varchar, boolean, json, integer, real, index } from "drizzle-orm/pg-core";
 
 /**
  * Enums for PostgreSQL
@@ -195,6 +195,10 @@ export const modelStats = pgTable("model_stats", {
   recentPoints: integer("recent_points").default(0).notNull(),
 
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => {
+  return {
+    userModelIdx: index("idx_model_stats_user_model").on(table.userId, table.modelId),
+  };
 });
 
 export type ModelStat = typeof modelStats.$inferSelect;
