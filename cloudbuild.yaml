@@ -3,6 +3,7 @@ steps:
   - name: 'gcr.io/cloud-builders/docker'
     args:
       - 'build'
+      - '--no-cache'
       - '--build-arg'
       - 'VITE_SUPABASE_URL=${_SUPABASE_URL}'
       - '--build-arg'
