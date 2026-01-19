@@ -16,10 +16,8 @@ function useLocalStorage(): boolean {
 }
 
 // Ensure local storage directory exists
-function ensureLocalStorageDir(): void {
-  if (!fs.existsSync(LOCAL_STORAGE_DIR)) {
-    fs.mkdirSync(LOCAL_STORAGE_DIR, { recursive: true });
-  }
+async function ensureLocalStorageDir(): Promise<void> {
+  await fs.promises.mkdir(LOCAL_STORAGE_DIR, { recursive: true });
 }
 
 function getStorageConfig(): StorageConfig {
@@ -90,28 +88,22 @@ async function localStoragePut(
   data: Buffer | Uint8Array | string,
   _contentType = "application/octet-stream"
 ): Promise<{ key: string; url: string }> {
-  ensureLocalStorageDir();
-  
+  await ensureLocalStorageDir();
+
   const key = normalizeKey(relKey);
   const filePath = path.join(LOCAL_STORAGE_DIR, key);
   const fileDir = path.dirname(filePath);
-  
+
   // Ensure subdirectory exists
-  if (!fs.existsSync(fileDir)) {
-    fs.mkdirSync(fileDir, { recursive: true });
-  }
-  
+  await fs.promises.mkdir(fileDir, { recursive: true });
+
   // Write file
-  if (typeof data === 'string') {
-    fs.writeFileSync(filePath, data);
-  } else {
-    fs.writeFileSync(filePath, Buffer.from(data));
-  }
-  
+  await fs.promises.writeFile(filePath, data);
+
   // Return URL that can be served by the app
   const url = `/uploads/${key}`;
   console.log(`[Local Storage] Saved file: ${filePath}`);
-  
+
   return { key, url };
 }
 
