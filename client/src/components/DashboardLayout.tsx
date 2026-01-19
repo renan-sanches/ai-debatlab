@@ -179,7 +179,7 @@ function DashboardLayoutContent({
           </div>
 
           {/* New Debate Button */}
-          <div className="p-4">
+          <div className="p-4 mt-[50px]">
             <Button
               onClick={() => setLocation("/")}
               className={`bg-primary hover:bg-primary/90 text-white font-medium flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/20 rounded-xl h-11 ${
@@ -274,7 +274,7 @@ function DashboardLayoutContent({
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         {/* Header */}
-        <header className="h-16 border-b border-border bg-white/80 dark:bg-[#05080f]/80 backdrop-blur-md flex items-center justify-between px-6 z-10 sticky top-0 flex-shrink-0">
+        <header className="h-16 border-b border-border bg-white dark:bg-[#05080f] flex items-center justify-between px-6 z-10 sticky top-0 flex-shrink-0">
           <div className="flex items-center gap-4">
             {/* Breadcrumb or context can go here */}
           </div>
