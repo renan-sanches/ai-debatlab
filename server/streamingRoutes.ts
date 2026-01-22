@@ -5,7 +5,7 @@
 import { Router, Request, Response } from "express";
 import { streamLLMResponse } from "./llmStreaming";
 import * as db from "./db";
-import { authenticateRequest } from "./supabase";
+import { authenticateRequest } from "./auth";
 import {
   prepareDebatePrompt,
   getUserApiKeyForModel,

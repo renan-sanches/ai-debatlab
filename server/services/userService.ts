@@ -1,12 +1,12 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { users, userApiKeys, userFavoriteModels, InsertUser, InsertUserApiKey } from "../../drizzle/schema";
 import { getDb } from "../_core/database";
 import { encrypt, decrypt, isEncrypted } from '../encryption';
 
 // User functions
 export async function upsertUser(user: InsertUser): Promise<void> {
-    if (!user.supabaseId) {
-        throw new Error("User supabaseId is required for upsert");
+    if (!user.firebaseUid) {
+        throw new Error("User firebaseUid is required for upsert");
     }
 
     const db = await getDb();
@@ -19,7 +19,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
         // Check if user exists
         const existing = await db.select()
             .from(users)
-            .where(eq(users.supabaseId, user.supabaseId))
+            .where(eq(users.firebaseUid, user.firebaseUid))
             .limit(1);
 
         if (existing.length > 0) {
@@ -36,11 +36,11 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 
             await db.update(users)
                 .set(updateSet)
-                .where(eq(users.supabaseId, user.supabaseId));
+                .where(eq(users.firebaseUid, user.firebaseUid));
         } else {
             // Insert new user
             await db.insert(users).values({
-                supabaseId: user.supabaseId,
+                firebaseUid: user.firebaseUid,
                 name: user.name,
                 email: user.email,
                 loginMethod: user.loginMethod,
@@ -54,14 +54,14 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     }
 }
 
-export async function getUserBySupabaseId(supabaseId: string) {
+export async function getUserByFirebaseUid(firebaseUid: string) {
     const db = await getDb();
     if (!db) {
         console.warn("[Database] Cannot get user: database not available");
         return undefined;
     }
 
-    const result = await db.select().from(users).where(eq(users.supabaseId, supabaseId)).limit(1);
+    const result = await db.select().from(users).where(eq(users.firebaseUid, firebaseUid)).limit(1);
     return result.length > 0 ? result[0] : undefined;
 }
 
@@ -161,9 +161,6 @@ export async function getUserFavoriteModels(userId: number) {
         .where(eq(userFavoriteModels.userId, userId))
         .orderBy(desc(userFavoriteModels.createdAt));
 }
-
-// Need to import desc for getUserFavoriteModels
-import { desc } from "drizzle-orm";
 
 export async function addUserFavoriteModel(userId: number, openRouterId: string, modelName: string) {
     const db = await getDb();

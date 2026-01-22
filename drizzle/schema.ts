@@ -14,7 +14,7 @@ export const providerEnum = pgEnum("provider", ["openrouter", "anthropic", "open
  */
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  supabaseId: varchar("supabase_id", { length: 64 }).notNull().unique(), // Supabase Auth user ID
+  firebaseUid: varchar("firebase_uid", { length: 64 }).notNull().unique(), // Firebase Auth user UID
   name: text("name"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("login_method", { length: 64 }),

@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import { getAccessToken } from "../lib/supabase";
+import { getAccessToken } from "@/lib/firebase";
 
 interface UsageInfo {
   promptTokens: number;
