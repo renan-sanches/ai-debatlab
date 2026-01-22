@@ -19,6 +19,7 @@ import {
 import { extractPdfForPrompt } from "../pdfExtractor";
 import { assignRandomAvatars } from "../config/avatarConfig";
 import { evaluateResponse } from "../services/scoringService";
+import { asyncPool } from "../utils";
 
 /**
  * Generate a short, descriptive title for a debate question
@@ -346,11 +347,15 @@ export const debateRouter = router({
       const currentRound = rounds.find(r => r.id === input.roundId);
       const question = currentRound?.followUpQuestion || debate.question;
 
-      const votes = [];
+      // Build a map of all participant models for matching
+      const participantModelsMap = debate.participantModels.map(id => {
+        const m = getModelById(id);
+        return { id, name: m?.name || id, model: m };
+      });
 
-      for (const modelId of debate.participantModels) {
+      const processVote = async (modelId: string) => {
         const model = getModelById(modelId);
-        if (!model) continue;
+        if (!model) return null;
 
         const prompt = buildVotingPrompt({
           userQuestion: question,
@@ -388,12 +393,6 @@ export const debateRouter = router({
 
         const rawVoteContent = response.choices[0]?.message?.content;
         const voteContent = typeof rawVoteContent === 'string' ? rawVoteContent : "";
-
-        // Build a map of all participant models for matching
-        const participantModelsMap = debate.participantModels.map(id => {
-          const m = getModelById(id);
-          return { id, name: m?.name || id, model: m };
-        });
 
         // Parse vote from response - handle multiple formats
         const votePatterns = [
@@ -491,14 +490,21 @@ export const debateRouter = router({
               reason: reason || voteContent.slice(0, 200),
             });
 
-            votes.push({
+            return {
               voterModelId: modelId,
               votedForModelId: votedForParticipant.id,
               reason: reason || voteContent.slice(0, 200),
-            });
+            };
           }
         }
-      }
+        return null;
+      };
+
+      const poolResults = await asyncPool(5, debate.participantModels, processVote);
+
+      const votes = poolResults
+        .filter((r): r is PromiseFulfilledResult<any> => r.status === "fulfilled" && r.value !== null)
+        .map(r => r.value);
 
       return { votes };
     }),
