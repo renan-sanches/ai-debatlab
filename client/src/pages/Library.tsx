@@ -136,6 +136,27 @@ function getDebateOutcome(debate: any): {
   };
 }
 
+// Helper function to get best available summary for executive summary section
+function getExecutiveSummary(debate: any): string {
+  // Priority 1: Consensus summary if consensus reached
+  if (debate.consensus && debate.consensusSummary) {
+    return debate.consensusSummary;
+  }
+
+  // Priority 2: Winning summary if winner exists
+  if (debate.winner && debate.winningSummary) {
+    return debate.winningSummary;
+  }
+
+  // Priority 3: Moderator synthesis from first round
+  if (debate.rounds?.[0]?.moderatorSynthesis) {
+    return debate.rounds[0].moderatorSynthesis;
+  }
+
+  // Fallback: Use question
+  return debate.question;
+}
+
 // Skeleton Loading Card Component
 function SkeletonCard() {
   return (
@@ -151,9 +172,9 @@ function SkeletonCard() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center gap-4 mb-6 py-5 bg-gray-50 dark:bg-gray-800/30 rounded-xl border border-gray-100 dark:border-gray-800">
-        <div className="w-14 h-14 rounded-full bg-gray-200 dark:bg-gray-700 shimmer" />
-        <div className="w-14 h-14 rounded-full bg-gray-200 dark:bg-gray-700 shimmer" />
+      <div className="flex items-center justify-center gap-4 md:gap-6 mb-6 py-6 bg-gray-50 dark:bg-gray-800/30 rounded-xl border border-gray-100 dark:border-gray-800">
+        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gray-200 dark:bg-gray-700 shimmer" />
+        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gray-200 dark:bg-gray-700 shimmer" />
       </div>
 
       <div className="mb-6 px-1">
@@ -349,7 +370,7 @@ export default function Library() {
                     </div>
 
                     {/* Participants Display */}
-                    <div className="flex items-center justify-center gap-6 mb-6 py-5 bg-gray-50 dark:bg-gray-800/30 rounded-xl border border-gray-100 dark:border-gray-800 relative overflow-hidden group-hover:border-blue-500/20 transition-colors">
+                    <div className="flex items-center justify-center gap-4 md:gap-6 mb-6 py-6 bg-gray-50 dark:bg-gray-800/30 rounded-xl border border-gray-100 dark:border-gray-800 relative overflow-hidden group-hover:border-blue-500/20 transition-colors">
                       <div
                         className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
                         style={{
@@ -358,9 +379,13 @@ export default function Library() {
                           backgroundSize: "16px 16px",
                         }}
                       />
-                      {participantModels.slice(0, participantModels.length === 2 ? 1 : 2).map((modelId, index) => {
+                      {participantModels.slice(0, 2).map((modelId, index) => {
                         const model = AI_MODELS.find((m) => m.id === modelId);
                         const modelEmoji = getModelEmoji(modelId);
+                        const borderColor = index === 0 ? "border-purple-500" : "border-emerald-500";
+                        const shadowColor = index === 0
+                          ? "shadow-[0_0_15px_rgba(168,85,247,0.25)] ring-4 ring-purple-500/10"
+                          : "shadow-[0_0_15px_rgba(16,185,129,0.25)] ring-4 ring-emerald-500/10";
 
                         return (
                           <div
@@ -368,11 +393,7 @@ export default function Library() {
                             className="flex flex-col items-center gap-2 z-10 relative"
                           >
                             <div
-                              className={`w-14 h-14 rounded-full ${modelEmoji.bgColor} border-2 ${
-                                index === 0
-                                  ? "border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.25)] ring-4 ring-purple-500/10"
-                                  : "border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.25)] ring-4 ring-emerald-500/10"
-                              } flex items-center justify-center text-2xl`}
+                              className={`w-16 h-16 md:w-20 md:h-20 rounded-full ${modelEmoji.bgColor} border-2 ${borderColor} ${shadowColor} flex items-center justify-center text-3xl`}
                             >
                               {modelEmoji.emoji}
                             </div>
@@ -383,51 +404,12 @@ export default function Library() {
                         );
                       })}
 
-                      {participantModels.length === 2 && (
+                      {participantModels.length >= 2 && (
                         <div className="flex flex-col items-center z-10 mx-2">
                           <span className="text-3xl font-black italic text-transparent bg-clip-text bg-gradient-to-b from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-800 tracking-widest drop-shadow-sm">
                             VS
                           </span>
                         </div>
-                      )}
-
-                      {participantModels.length === 2 ? (
-                        <div className="flex flex-col items-center gap-2 z-10 relative">
-                          {(() => {
-                            const modelId = participantModels[1];
-                            const model = AI_MODELS.find((m) => m.id === modelId);
-                            const modelEmoji = getModelEmoji(modelId);
-
-                            return (
-                              <>
-                                <div className={`w-14 h-14 rounded-full ${modelEmoji.bgColor} border-2 border-emerald-500 flex items-center justify-center text-2xl shadow-[0_0_15px_rgba(16,185,129,0.25)] ring-4 ring-emerald-500/10`}>
-                                  {modelEmoji.emoji}
-                                </div>
-                                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
-                                  {model?.name?.split(" ")[0] || modelId}
-                                </span>
-                              </>
-                            );
-                          })()}
-                        </div>
-                      ) : participantModels.length > 2 && (
-                        <>
-                          <div className="flex flex-col items-center z-10 mx-2">
-                            <span className="text-2xl font-black italic text-transparent bg-clip-text bg-gradient-to-b from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-800 tracking-widest drop-shadow-sm">
-                              VS
-                            </span>
-                          </div>
-                          <div className="flex flex-col items-center gap-2 z-10 relative">
-                            <div className="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700 flex items-center justify-center">
-                              <span className="text-sm font-bold text-gray-500">
-                                +{participantModels.length - 2}
-                              </span>
-                            </div>
-                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
-                              More
-                            </span>
-                          </div>
-                        </>
                       )}
                     </div>
 
@@ -437,7 +419,7 @@ export default function Library() {
                         Executive Summary
                       </h4>
                       <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-3">
-                        {debate.question}
+                        {getExecutiveSummary(debate)}
                       </p>
                     </div>
 
@@ -471,7 +453,7 @@ export default function Library() {
                     <div className="flex items-center gap-3 border-t border-gray-100 dark:border-gray-800 pt-5 mt-auto">
                       {debate.status === "active" ? (
                         <button
-                          className="flex-1 bg-primary hover:bg-primary-hover text-white font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all shadow-glow"
+                          className="flex-1 bg-primary hover:bg-primary-hover text-white font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all shadow-glow active:scale-95 touch-manipulation min-h-[44px]"
                           onClick={() =>
                             navigate(`/debate/${debate.id}?autostart=true`)
                           }
@@ -481,7 +463,7 @@ export default function Library() {
                         </button>
                       ) : (
                         <button
-                          className="flex-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-neon-blue border border-cyan-500/20 font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all shadow-neon-blue"
+                          className="flex-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-neon-blue border border-cyan-500/20 font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all shadow-neon-blue active:scale-95 touch-manipulation min-h-[44px]"
                           onClick={() => navigate(`/debate/${debate.id}`)}
                         >
                           <FileText className="w-5 h-5" />
@@ -490,7 +472,7 @@ export default function Library() {
                       )}
 
                       <button
-                        className="w-12 h-10 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                        className="w-12 h-10 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors active:scale-95 touch-manipulation min-h-[44px]"
                         title="Download"
                       >
                         <Download className="w-5 h-5" />
@@ -499,7 +481,7 @@ export default function Library() {
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <button
-                            className="w-12 h-10 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            className="w-12 h-10 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors active:scale-95 touch-manipulation min-h-[44px]"
                             title="Delete"
                           >
                             <Trash2 className="w-5 h-5" />
