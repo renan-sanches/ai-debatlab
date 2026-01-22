@@ -371,12 +371,12 @@ export const debateRouter = router({
         let apiProvider: "openrouter" | "anthropic" | "openai" | "google" | null = null;
 
         if (input.useUserApiKey) {
-          const openRouterKey = await db.getUserApiKeyByProvider(ctx.user.id, "openrouter");
+          const openRouterKey = userApiKeys.find(k => k.provider === "openrouter");
           if (openRouterKey) {
             userApiKey = openRouterKey.apiKey;
             apiProvider = "openrouter";
           } else {
-            const providerKey = await db.getUserApiKeyByProvider(ctx.user.id, model.provider as "anthropic" | "openai" | "google");
+            const providerKey = userApiKeys.find(k => k.provider === model.provider);
             if (providerKey) {
               userApiKey = providerKey.apiKey;
               apiProvider = model.provider as "anthropic" | "openai" | "google";

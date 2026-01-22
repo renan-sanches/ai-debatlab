@@ -153,20 +153,16 @@ export async function getResponsesByDebateId(debateId: number) {
   return db.select().from(responses).where(eq(responses.debateId, debateId)).orderBy(responses.createdAt);
 }
 
-// Full debate data retrieval - optimized to avoid N+1 queries
-export async function getFullDebateData(debateId: number) {
+// Helper to get rounds with data efficiently
+export async function getRoundsWithData(debateId: number) {
   const db = await getDb();
-  if (!db) return null;
-
-  // Fetch debate
-  const debate = await getDebateById(debateId);
-  if (!debate) return null;
+  if (!db) return [];
 
   // Fetch all rounds for this debate
   const debateRounds = await getRoundsByDebateId(debateId);
 
   if (debateRounds.length === 0) {
-    return { ...debate, rounds: [] };
+    return [];
   }
 
   // Batch fetch all responses for this debate
@@ -198,11 +194,23 @@ export async function getFullDebateData(debateId: number) {
   });
 
   // Assemble rounds with their data
-  const roundsWithData = debateRounds.map(round => ({
+  return debateRounds.map(round => ({
     ...round,
     responses: responsesByRound.get(round.id) || [],
     votes: votesByRound.get(round.id) || [],
   }));
+}
+
+// Full debate data retrieval - optimized to avoid N+1 queries
+export async function getFullDebateData(debateId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Fetch debate
+  const debate = await getDebateById(debateId);
+  if (!debate) return null;
+
+  const roundsWithData = await getRoundsWithData(debateId);
 
   return {
     ...debate,
