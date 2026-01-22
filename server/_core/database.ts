@@ -8,7 +8,7 @@ let _client: ReturnType<typeof postgres> | null = null;
 export async function getDb() {
     if (!_db && ENV.databaseUrl) {
         try {
-            _client = postgres(ENV.databaseUrl);
+            _client = postgres(ENV.databaseUrl, { prepare: false });
             _db = drizzle(_client);
             console.log("[Database] Connected to PostgreSQL");
         } catch (error) {
@@ -22,7 +22,7 @@ export async function getDb() {
         // or just return null and let caller handle it
         if (process.env.DATABASE_URL && !_client) {
             try {
-                _client = postgres(process.env.DATABASE_URL);
+                _client = postgres(process.env.DATABASE_URL, { prepare: false });
                 _db = drizzle(_client);
                 console.log("[Database] Connected to PostgreSQL (fallback env)");
             } catch (e) {

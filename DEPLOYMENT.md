@@ -1,54 +1,44 @@
-# Deployment Guide: Google Cloud SQL + Firebase
+# Deployment Guide: Supabase + Firebase + Cloud Run
 
-This guide describes how to deploy the AI DebateLab application using Google Cloud Platform (Cloud SQL, Cloud Run) and Firebase (Auth, Storage).
+This guide describes how to deploy the AI DebateLab application using Supabase (PostgreSQL Database), Google Cloud Run (Hosting), and Firebase (Auth, Storage).
 
 ## Prerequisites
 
-1.  **Google Cloud Project**: You need a GCP project with billing enabled.
-2.  **Firebase Project**: You need a Firebase project linked to your GCP project.
-3.  **gcloud CLI**: Installed and authenticated.
-4.  **Firebase CLI**: Installed and logged in.
+1.  **Supabase Account**: Create a project at [supabase.com](https://supabase.com).
+2.  **Google Cloud Project**: With billing enabled.
+3.  **Firebase Project**: Linked to your GCP project.
+4.  **CLI Tools**: `gcloud`, `firebase`, and `pnpm` installed.
 
-## 1. Firebase Configuration
+## 1. Firebase Configuration (Auth & Storage)
 
-### 1.1. Authentication
-1.  Go to the [Firebase Console](https://console.firebase.google.com/).
-2.  Navigate to **Authentication** > **Sign-in method**.
-3.  Enable **Email/Password**.
-4.  Enable **Google** (and GitHub if desired).
-5.  Go to **Project Settings** > **General**.
-6.  Register a new **Web App** if one doesn't exist.
-7.  Copy the firebase configuration values (`apiKey`, `authDomain`, etc.). You will need these for the client environment variables.
+### 1.1. Setup
+1.  Go to [Firebase Console](https://console.firebase.google.com/).
+2.  **Authentication**: Enable **Email/Password** and **Google** in Sign-in methods.
+3.  **Storage**: Create a default bucket.
+4.  **Service Account**:
+    *   Go to **Project Settings** > **Service accounts**.
+    *   Click **Generate new private key**.
+    *   Save the JSON file. You will need the `private_key`, `project_id`, and `client_email`.
 
-### 1.2. Storage
-1.  Navigate to **Storage**.
-2.  Click **Get Started** to create a default bucket.
-3.  Set security rules (default is fine for testing, but lock it down for production).
-    *   *Note*: The application code attempts to make uploaded files public. Ensure your bucket permissions allow this if you want avatars/images to be publicly viewable without signed URLs, or update the storage logic in `server/storage.ts`.
+## 2. Supabase Configuration (Database)
 
-### 1.3. Service Account (Backend)
-1.  In **Project Settings** > **Service accounts**.
-2.  Click **Generate new private key**.
-3.  Save the JSON file. You will need the `project_id`, `client_email`, and `private_key` for the backend environment variables.
+1.  Create a new project on [Supabase](https://supabase.com).
+2.  Go to **Project Settings** > **Database**.
+3.  Under **Connection Pooling**, note the connection string.
+    *   **Mode**: Transaction (Port 6543) - Recommended for Cloud Run (serverless).
+    *   **Mode**: Session (Port 5432) - Required for running migrations.
+4.  **Get the Connection Strings**:
+    *   **Runtime Connection String** (for Cloud Run):
+        `postgres://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres?pgbouncer=true`
+    *   **Migration Connection String** (for running `db:push`):
+        `postgres://postgres.[project-ref]:[password]@aws-0-[region].pooler.supabase.com:5432/postgres`
 
-## 2. Google Cloud SQL (PostgreSQL)
-
-1.  Go to the [Cloud SQL Console](https://console.cloud.google.com/sql).
-2.  Click **Create Instance** > **Choose PostgreSQL**.
-3.  Configure the instance:
-    *   **Instance ID**: `ai-debatelab-db` (or similar).
-    *   **Password**: Generate a strong password.
-    *   **Database version**: PostgreSQL 15 or higher.
-    *   **Region**: Same as your Cloud Run service (e.g., `us-central1`).
-4.  Once created, go to the **Databases** tab and create a new database named `ai_debatelab` (or your preferred name).
-5.  Go to the **Users** tab and create a user (if you don't want to use the default `postgres` user).
+*Note: Replace `[password]` with your database password.*
 
 ## 3. Environment Variables
 
-You need to set environment variables for both the **Build** (Frontend) and **Runtime** (Backend).
-
 ### 3.1. Frontend (Build Args)
-These are needed when building the Docker image because Vite bundles them into the client code.
+These are baked into the frontend build.
 
 *   `VITE_FIREBASE_API_KEY`
 *   `VITE_FIREBASE_AUTH_DOMAIN`
@@ -62,18 +52,18 @@ These are needed when building the Docker image because Vite bundles them into t
 These are set in Cloud Run.
 
 *   `NODE_ENV`: `production`
-*   `DATABASE_URL`: Connection string to Cloud SQL (see "Connecting from Cloud Run" below).
+*   `DATABASE_URL`: Your Supabase **Transaction** connection string (Port 6543).
 *   `FIREBASE_PROJECT_ID`: From service account JSON.
 *   `FIREBASE_CLIENT_EMAIL`: From service account JSON.
-*   `FIREBASE_PRIVATE_KEY`: From service account JSON (include `\n` for newlines).
-*   `JWT_SECRET`: A long random string.
+*   `FIREBASE_PRIVATE_KEY`: From service account JSON (replace `\n` with real newlines if pasting in GUI, or use flags in CLI).
+*   `JWT_SECRET`: A 32-char random string.
 *   `OPENROUTER_API_KEY`: Your OpenRouter key.
-*   `ENCRYPTION_KEY`: A 32-character random string.
+*   `ENCRYPTION_KEY`: A 32-char random string.
 
 ## 4. Deploying to Cloud Run
 
 ### 4.1. Build and Submit Container
-Use Cloud Build to build the image. Replace the values with your actual Firebase config.
+Replace values with your Firebase Web Config.
 
 ```bash
 gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/ai-debatelab \
@@ -86,7 +76,7 @@ gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/ai-debatelab \
 ```
 
 ### 4.2. Deploy Service
-Deploy the container to Cloud Run, connecting it to Cloud SQL.
+Deploy to Cloud Run connecting to Supabase.
 
 ```bash
 gcloud run deploy ai-debatelab \
@@ -94,9 +84,8 @@ gcloud run deploy ai-debatelab \
   --platform managed \
   --region us-central1 \
   --allow-unauthenticated \
-  --add-cloudsql-instances YOUR_PROJECT_ID:REGION:INSTANCE_ID \
   --set-env-vars "NODE_ENV=production" \
-  --set-env-vars "DATABASE_URL=postgresql://USER:PASSWORD@localhost/DB_NAME?host=/cloudsql/YOUR_PROJECT_ID:REGION:INSTANCE_ID" \
+  --set-env-vars "DATABASE_URL=postgres://..." \
   --set-env-vars "FIREBASE_PROJECT_ID=..." \
   --set-env-vars "FIREBASE_CLIENT_EMAIL=..." \
   --set-env-vars "FIREBASE_PRIVATE_KEY=..." \
@@ -105,38 +94,13 @@ gcloud run deploy ai-debatelab \
   --set-env-vars "ENCRYPTION_KEY=..."
 ```
 
-**Important Note on `DATABASE_URL`**:
-When using Cloud Run with the `--add-cloudsql-instances` flag, the Unix socket is available at `/cloudsql/INSTANCE_CONNECTION_NAME`.
-PostgreSQL connection string format: `postgresql://user:password@localhost/dbname?host=/cloudsql/INSTANCE_CONNECTION_NAME`
-
 ## 5. Database Migrations
 
-After deploying, you need to apply the database migrations. The app currently does not auto-migrate on startup (it's safer to run manually).
+You must run migrations to set up the database schema.
+**Important**: Use the **Session** connection string (Port 5432) for migrations.
 
-### Option A: Run locally (easiest if you have network access)
-1.  Install `cloud_sql_proxy`.
-2.  Start proxy: `./cloud_sql_proxy -instances=INSTANCE_CONNECTION_NAME=tcp:5432`
-3.  Set `DATABASE_URL=postgresql://user:pass@localhost:5432/dbname` locally.
-4.  Run: `pnpm db:push`
-
-### Option B: Run via a temporary job
-Create a Cloud Run Job that runs the migration command.
-
-```bash
-gcloud run jobs create migrate-db \
-  --image gcr.io/YOUR_PROJECT_ID/ai-debatelab \
-  --command "pnpm" \
-  --args "db:push" \
-  --add-cloudsql-instances YOUR_PROJECT_ID:REGION:INSTANCE_ID \
-  --set-env-vars "DATABASE_URL=postgresql://USER:PASSWORD@localhost/DB_NAME?host=/cloudsql/YOUR_PROJECT_ID:REGION:INSTANCE_ID" \
-  --region us-central1
-
-gcloud run jobs execute migrate-db --region us-central1
-```
-
-## 6. Verification
-
-1.  Open the Cloud Run URL.
-2.  Try to Sign Up / Login (this verifies Firebase Auth and DB connection).
-3.  Start a debate (verifies OpenRouter/AI integration).
-4.  Upload a custom avatar (verifies Firebase Storage).
+1.  Set `DATABASE_URL` locally to the Supabase Session connection string.
+2.  Run:
+    ```bash
+    pnpm db:push
+    ```

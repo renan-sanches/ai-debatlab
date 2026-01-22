@@ -57,6 +57,8 @@ COPY --from=builder /app/dist ./dist
 # Copy necessary files for runtime
 COPY drizzle ./drizzle
 COPY shared ./shared
+COPY drizzle.config.ts ./
+COPY tsconfig.json ./
 
 # Create uploads directory for local file storage
 RUN mkdir -p uploads

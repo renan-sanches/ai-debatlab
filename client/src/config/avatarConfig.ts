@@ -68,6 +68,12 @@ export function getModelAvatar(
     if (modelAvatars && modelAvatars[modelId]) {
         return modelAvatars[modelId];
     }
-    // Fallback to dicebear if no assignment
-    return `https://api.dicebear.com/7.x/bottts/svg?seed=${modelId}`;
+    
+    // Deterministic fallback to one of our avatars based on modelId
+    let hash = 0;
+    for (let i = 0; i < modelId.length; i++) {
+        hash = modelId.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const index = Math.abs(hash) % AVATAR_PATHS.length;
+    return AVATAR_PATHS[index];
 }

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>DebateLab - Hybrid Debate History Log</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<script>
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#3B82F6", // Electric Blue
+              "primary-hover": "#2563EB",
+              "background-light": "#F8FAFC", // Slate 50
+              "background-dark": "#05080F", // Deepest Navy/Black
+              "surface-light": "#FFFFFF",
+              "surface-dark": "#0F1623", // Sidebar/Header
+              "card-light": "#FFFFFF",
+              "card-dark": "#151B28", // Card Background
+              "card-border-dark": "#1F2937",
+              "text-light-primary": "#1E293B",
+              "text-dark-primary": "#F1F5F9",
+              "text-light-secondary": "#64748B",
+              "text-dark-secondary": "#94A3B8",
+              "neon-blue": "#06b6d4", // Cyan 500
+              "neon-green": "#10b981", // Emerald 500
+            },
+            fontFamily: {
+              display: ["'Plus Jakarta Sans'", "sans-serif"],
+              sans: ["'Plus Jakarta Sans'", "sans-serif"],
+            },
+            borderRadius: {
+              DEFAULT: "0.75rem", // 12px
+              "xl": "1rem",
+              "2xl": "1.5rem"
+            },
+            boxShadow: {
+                'glow': '0 0 25px rgba(59, 130, 246, 0.25)',
+                'neon-blue': '0 0 15px rgba(6, 182, 212, 0.25)',
+                'neon-green': '0 0 15px rgba(16, 185, 129, 0.25)',
+                'card': '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+            }
+          },
+        },
+      };
+    </script>
+<style>
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .neon-border-blue {
+            box-shadow: 0 0 5px rgba(6, 182, 212, 0.5), inset 0 0 5px rgba(6, 182, 212, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-text-light-primary dark:text-text-dark-primary font-sans antialiased h-screen flex overflow-hidden transition-colors duration-300">
+<aside class="w-64 bg-surface-light dark:bg-surface-dark border-r border-gray-200 dark:border-gray-800 flex flex-col flex-shrink-0 z-20">
+<div class="h-16 flex items-center px-6 border-b border-gray-100 dark:border-gray-800/50">
+<div class="flex items-center gap-2 text-primary">
+<span class="material-icons-round text-3xl">psychology</span>
+<span class="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Debate<span class="text-primary">Lab</span></span>
+</div>
+</div>
+<div class="p-4">
+<button class="w-full bg-primary hover:bg-primary-hover text-white font-medium py-3 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-blue-500/20 dark:shadow-blue-500/10 group">
+<span class="material-icons-round text-xl group-hover:rotate-90 transition-transform">add</span>
+<span>New Debate</span>
+</button>
+</div>
+<nav class="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg text-text-light-secondary dark:text-text-dark-secondary hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group" href="#">
+<span class="material-icons-round text-gray-400 group-hover:text-primary transition-colors">grid_view</span>
+<span class="font-medium">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg bg-blue-50 dark:bg-blue-500/10 text-primary transition-colors" href="#">
+<span class="material-icons-round">history</span>
+<span class="font-medium">History</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg text-text-light-secondary dark:text-text-dark-secondary hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group" href="#">
+<span class="material-icons-round text-gray-400 group-hover:text-primary transition-colors">analytics</span>
+<span class="font-medium">Analytics</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-3 rounded-lg text-text-light-secondary dark:text-text-dark-secondary hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors group" href="#">
+<span class="material-icons-round text-gray-400 group-hover:text-primary transition-colors">people</span>
+<span class="font-medium">Community</span>
+</a>
+</nav>
+<div class="p-4 border-t border-gray-200 dark:border-gray-800/50">
+<div class="bg-gray-100 dark:bg-gray-800/50 rounded-lg p-3">
+<p class="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">Version</p>
+<p class="text-xs text-gray-700 dark:text-gray-300">DebateLab v1.4.2</p>
+</div>
+</div>
+</aside>
+<div class="flex-1 flex flex-col h-full overflow-hidden relative">
+<header class="h-16 flex items-center justify-end px-8 border-b border-gray-200 dark:border-gray-800/50 bg-surface-light/80 dark:bg-surface-dark/80 backdrop-blur-md z-10 sticky top-0">
+<div class="flex items-center gap-6">
+<div class="flex items-center gap-2 px-3 py-1.5 bg-gray-100 dark:bg-gray-800 rounded-full border border-gray-200 dark:border-gray-700">
+<span class="relative flex h-2.5 w-2.5">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+</span>
+<span class="text-xs font-semibold text-gray-600 dark:text-gray-300 tracking-wide">STATUS: <span class="text-primary">READY</span></span>
+</div>
+<button class="p-2 rounded-full text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors" onclick="document.documentElement.classList.toggle('dark')">
+<span class="material-icons-round block dark:hidden">dark_mode</span>
+<span class="material-icons-round hidden dark:block">light_mode</span>
+</button>
+<div class="flex items-center gap-3 pl-6 border-l border-gray-200 dark:border-gray-800">
+<div class="text-right hidden sm:block">
+<p class="text-sm font-semibold text-slate-900 dark:text-white leading-none">Renan</p>
+<p class="text-xs text-primary mt-1 leading-none">Premium Plan</p>
+</div>
+<div class="h-9 w-9 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold shadow-lg shadow-blue-500/20">R</div>
+</div>
+</div>
+</header>
+<main class="flex-1 overflow-y-auto p-6 md:p-8 lg:px-12 lg:py-10 scroll-smooth">
+<div class="max-w-7xl mx-auto space-y-10">
+<div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div class="space-y-4">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-bold tracking-wider uppercase">
+<span class="material-icons-round text-sm">history</span> History Archives
+                        </div>
+<h1 class="text-4xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white">
+                            Your Debate <span class="gradient-text">Journey</span>
+</h1>
+<p class="text-text-light-secondary dark:text-text-dark-secondary text-lg max-w-2xl leading-relaxed">
+                            Review detailed logs of past dialectics. Analyze winning arguments, consensus points, and AI model performance metrics.
+                        </p>
+</div>
+<div class="flex items-center gap-3">
+<div class="relative group hidden lg:block">
+<div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+<span class="material-icons-round text-gray-400 group-focus-within:text-primary transition-colors">search</span>
+</div>
+<input class="block w-64 pl-10 pr-4 py-3 rounded-xl bg-white dark:bg-card-dark border border-gray-200 dark:border-card-border-dark text-slate-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all text-sm shadow-sm" placeholder="Search logs..." type="text"/>
+</div>
+<button class="bg-primary hover:bg-primary-hover text-white font-semibold py-3 px-6 rounded-xl shadow-glow transition-all flex items-center gap-2 group whitespace-nowrap">
+<span class="material-icons-round group-hover:rotate-12 transition-transform">explore</span>
+                            New Exploration
+                        </button>
+</div>
+</div>
+<div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+<div class="bg-white dark:bg-card-dark rounded-2xl p-6 border border-gray-200 dark:border-card-border-dark shadow-card hover:shadow-glow transition-all duration-300 flex flex-col">
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+<div>
+<div class="flex flex-wrap items-center gap-3 mb-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/10 text-neon-green border border-green-500/20 shadow-[0_0_8px_rgba(16,185,129,0.15)] uppercase tracking-wider">
+                                        Completed
+                                     </span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1">
+<span class="material-icons-round text-sm">schedule</span> 45m
+                                     </span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1">
+<span class="material-icons-round text-sm text-red-400">local_fire_department</span> High Intensity
+                                     </span>
+</div>
+<h3 class="text-xl font-bold text-slate-900 dark:text-white leading-tight">Automating QBRs with AI for Client Success</h3>
+</div>
+<div class="text-right hidden sm:block shrink-0">
+<span class="text-[10px] font-mono text-gray-400 dark:text-gray-600 border border-gray-200 dark:border-gray-800 rounded px-1.5 py-0.5">ID: #8823</span>
+<div class="text-xs text-gray-500 mt-1">Jan 12, 2026</div>
+</div>
+</div>
+<div class="flex items-center justify-center gap-6 mb-6 py-5 bg-gray-50 dark:bg-gray-800/30 rounded-xl border border-gray-100 dark:border-gray-800 relative overflow-hidden group-hover:border-blue-500/20 transition-colors">
+<div class="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" style="background-image: radial-gradient(#64748B 1px, transparent 1px); background-size: 16px 16px;"></div>
+<div class="flex flex-col items-center gap-2 z-10 relative">
+<div class="w-14 h-14 rounded-full bg-purple-100 dark:bg-purple-900/20 border-2 border-purple-500 flex items-center justify-center text-2xl shadow-[0_0_15px_rgba(168,85,247,0.25)] ring-4 ring-purple-500/10">🤖</div>
+<span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">Claude 3.5</span>
+</div>
+<div class="flex flex-col items-center z-10 mx-2">
+<span class="text-3xl font-black italic text-transparent bg-clip-text bg-gradient-to-b from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-800 tracking-widest drop-shadow-sm">VS</span>
+</div>
+<div class="flex flex-col items-center gap-2 z-10 relative">
+<div class="w-14 h-14 rounded-full bg-emerald-100 dark:bg-emerald-900/20 border-2 border-emerald-500 flex items-center justify-center text-2xl shadow-[0_0_15px_rgba(16,185,129,0.25)] ring-4 ring-emerald-500/10">👾</div>
+<span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">GPT-4o</span>
+</div>
+</div>
+<div class="mb-6 px-1">
+<h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Executive Summary</h4>
+<p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                                A rigorous debate on replacing human-led Quarterly Business Reviews with AI. The core conflict centered on efficiency gains (GPT-4o stance) versus the loss of relationship equity and nuance (Claude 3.5 stance).
+                            </p>
+</div>
+<div class="mt-auto mb-6 p-4 rounded-xl bg-slate-50 dark:bg-[#1A2333] border-l-4 border-yellow-500 relative shadow-sm">
+<div class="flex items-start gap-3">
+<div class="p-1.5 bg-yellow-500/10 rounded-full shrink-0">
+<span class="material-icons-round text-yellow-500 text-lg">emoji_events</span>
+</div>
+<div>
+<h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Winning Argument: Claude 3.5</h4>
+<p class="text-xs md:text-sm text-slate-600 dark:text-slate-400 italic">
+                                        "Hyper-personalization via context injection creates more value than generic human-led meetings, increasing retention by a projected 15%."
+                                    </p>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 border-t border-gray-100 dark:border-gray-800 pt-5">
+<button class="flex-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-neon-blue border border-cyan-500/20 font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all shadow-neon-blue">
+<span class="material-icons-round text-lg">description</span> <span class="text-sm">Review Transcript</span>
+</button>
+<button class="w-12 h-10 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" title="Download">
+<span class="material-icons-round text-lg">download</span>
+</button>
+<button class="w-12 h-10 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Delete">
+<span class="material-icons-round text-lg">delete</span>
+</button>
+</div>
+</div>
+<div class="bg-white dark:bg-card-dark rounded-2xl p-6 border border-gray-200 dark:border-card-border-dark shadow-card hover:shadow-glow transition-all duration-300 flex flex-col">
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+<div>
+<div class="flex flex-wrap items-center gap-3 mb-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 shadow-[0_0_8px_rgba(59,130,246,0.15)] uppercase tracking-wider">
+                                        Active
+                                     </span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1">
+<span class="material-icons-round text-sm">schedule</span> 1h 20m
+                                     </span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1">
+<span class="material-icons-round text-sm text-yellow-500">bolt</span> Med Intensity
+                                     </span>
+</div>
+<h3 class="text-xl font-bold text-slate-900 dark:text-white leading-tight">Philosophy of Mind: Dualism vs Materialism</h3>
+</div>
+<div class="text-right hidden sm:block shrink-0">
+<span class="text-[10px] font-mono text-gray-400 dark:text-gray-600 border border-gray-200 dark:border-gray-800 rounded px-1.5 py-0.5">ID: #8941</span>
+<div class="text-xs text-gray-500 mt-1">Jan 11, 2026</div>
+</div>
+</div>
+<div class="flex items-center justify-center gap-6 mb-6 py-5 bg-gray-50 dark:bg-gray-800/30 rounded-xl border border-gray-100 dark:border-gray-800 relative overflow-hidden group-hover:border-blue-500/20 transition-colors">
+<div class="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" style="background-image: radial-gradient(#64748B 1px, transparent 1px); background-size: 16px 16px;"></div>
+<div class="flex flex-col items-center gap-2 z-10 relative">
+<div class="w-14 h-14 rounded-full bg-blue-100 dark:bg-blue-900/20 border-2 border-blue-500 flex items-center justify-center text-2xl shadow-[0_0_15px_rgba(59,130,246,0.25)] ring-4 ring-blue-500/10">🧠</div>
+<span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">Gemini 1.5</span>
+</div>
+<div class="flex flex-col items-center z-10 mx-2">
+<span class="text-3xl font-black italic text-transparent bg-clip-text bg-gradient-to-b from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-800 tracking-widest drop-shadow-sm">VS</span>
+</div>
+<div class="flex flex-col items-center gap-2 z-10 relative">
+<div class="w-14 h-14 rounded-full bg-orange-100 dark:bg-orange-900/20 border-2 border-orange-500 flex items-center justify-center text-2xl shadow-[0_0_15px_rgba(249,115,22,0.25)] ring-4 ring-orange-500/10">⚡</div>
+<span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">Mistral L</span>
+</div>
+</div>
+<div class="mb-6 px-1">
+<h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Executive Summary</h4>
+<p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                                A philosophical deep dive exploring whether consciousness can be reduced to physical processes. Gemini argued for property dualism, while Mistral maintained a strict materialist computational viewpoint.
+                            </p>
+</div>
+<div class="mt-auto mb-6 p-4 rounded-xl bg-slate-50 dark:bg-[#1A2333] border-l-4 border-blue-400 relative shadow-sm">
+<div class="flex items-start gap-3">
+<div class="p-1.5 bg-blue-400/10 rounded-full shrink-0">
+<span class="material-icons-round text-blue-400 text-lg">handshake</span>
+</div>
+<div>
+<h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Partial Consensus Reached</h4>
+<p class="text-xs md:text-sm text-slate-600 dark:text-slate-400 italic">
+                                        "Both models agreed that current definitions of qualia are insufficient for computational modeling, regardless of the underlying ontology."
+                                    </p>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 border-t border-gray-100 dark:border-gray-800 pt-5">
+<button class="flex-1 bg-primary hover:bg-primary-hover text-white font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all shadow-glow">
+<span class="material-icons-round text-lg">play_arrow</span> <span class="text-sm">Resume Debate</span>
+</button>
+<button class="w-12 h-10 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" title="Download">
+<span class="material-icons-round text-lg">download</span>
+</button>
+<button class="w-12 h-10 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Delete">
+<span class="material-icons-round text-lg">delete</span>
+</button>
+</div>
+</div>
+<div class="bg-white dark:bg-card-dark rounded-2xl p-6 border border-gray-200 dark:border-card-border-dark shadow-card hover:shadow-glow transition-all duration-300 flex flex-col xl:col-span-2">
+<div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+<div>
+<div class="flex flex-wrap items-center gap-3 mb-2">
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-green-500/10 text-neon-green border border-green-500/20 shadow-[0_0_8px_rgba(16,185,129,0.15)] uppercase tracking-wider">
+                                        Completed
+                                     </span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1">
+<span class="material-icons-round text-sm">schedule</span> 2h 15m
+                                     </span>
+<span class="text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1">
+<span class="material-icons-round text-sm text-orange-500">local_fire_department</span> Extreme Intensity
+                                     </span>
+</div>
+<h3 class="text-xl font-bold text-slate-900 dark:text-white leading-tight">Sustainable Energy Solutions for 2030: Nuclear vs Renewables</h3>
+</div>
+<div class="text-right hidden sm:block shrink-0">
+<span class="text-[10px] font-mono text-gray-400 dark:text-gray-600 border border-gray-200 dark:border-gray-800 rounded px-1.5 py-0.5">ID: #7712</span>
+<div class="text-xs text-gray-500 mt-1">Jan 09, 2026</div>
+</div>
+</div>
+<div class="flex flex-col xl:flex-row gap-6">
+<div class="xl:w-1/3 flex items-center justify-center gap-4 py-6 bg-gray-50 dark:bg-gray-800/30 rounded-xl border border-gray-100 dark:border-gray-800 relative overflow-hidden">
+<div class="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]" style="background-image: radial-gradient(#64748B 1px, transparent 1px); background-size: 16px 16px;"></div>
+<div class="flex flex-col items-center gap-2 z-10">
+<div class="w-14 h-14 rounded-full bg-cyan-100 dark:bg-cyan-900/20 border-2 border-cyan-500 flex items-center justify-center text-2xl shadow-[0_0_15px_rgba(6,182,212,0.25)]">☢️</div>
+<span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase">Llama 3</span>
+</div>
+<div class="flex flex-col items-center z-10">
+<span class="text-2xl font-black italic text-gray-300 dark:text-gray-700">VS</span>
+</div>
+<div class="flex flex-col items-center gap-2 z-10">
+<div class="w-14 h-14 rounded-full bg-yellow-100 dark:bg-yellow-900/20 border-2 border-yellow-500 flex items-center justify-center text-2xl shadow-[0_0_15px_rgba(234,179,8,0.25)]">☀️</div>
+<span class="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase">GPT-4o</span>
+</div>
+</div>
+<div class="xl:w-2/3 flex flex-col">
+<div class="mb-4">
+<h4 class="text-[11px] font-bold text-gray-400 uppercase tracking-widest mb-2">Executive Summary</h4>
+<p class="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                                        Debate focused on baseload reliability issues. Llama 3 championed advanced SMR nuclear technology as the only viable baseload for 2030, while GPT-4o argued for decentralized battery storage grids.
+                                    </p>
+</div>
+<div class="mt-auto mb-6 p-4 rounded-xl bg-slate-50 dark:bg-[#1A2333] border-l-4 border-cyan-500 relative shadow-sm">
+<div class="flex items-start gap-3">
+<div class="p-1.5 bg-cyan-500/10 rounded-full shrink-0">
+<span class="material-icons-round text-cyan-500 text-lg">emoji_events</span>
+</div>
+<div>
+<h4 class="text-sm font-bold text-slate-900 dark:text-white mb-1">Winning Argument: Llama 3</h4>
+<p class="text-xs md:text-sm text-slate-600 dark:text-slate-400 italic">
+                                                "SMR deployment timelines, while optimistic, present fewer supply chain bottlenecks for critical minerals than the 400% increase in battery production required by the opposition's model."
+                                            </p>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-3 border-t border-gray-100 dark:border-gray-800 pt-5 mt-auto">
+<button class="flex-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-neon-blue border border-cyan-500/20 font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all shadow-neon-blue">
+<span class="material-icons-round text-lg">description</span> <span class="text-sm">Review Transcript</span>
+</button>
+<button class="w-12 h-10 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors" title="Download">
+<span class="material-icons-round text-lg">download</span>
+</button>
+</div>
+</div>
+</div>
+<div class="flex justify-center pt-8 pb-8">
+<button class="text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-neon-blue dark:hover:text-neon-blue transition-colors flex items-center gap-2 px-6 py-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+<span class="material-icons-round">history</span> Load older debates
+                    </button>
+</div>
+</div>
+</main>
+</div>
+<div class="fixed inset-0 pointer-events-none opacity-5 dark:opacity-20 z-0 mix-blend-overlay" style="background-image: radial-gradient(#3B82F6 1px, transparent 1px); background-size: 32px 32px;">
+</div>
+
+</body></html>
