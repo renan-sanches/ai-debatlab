@@ -348,6 +348,12 @@ export const debateRouter = router({
 
       const votes = [];
 
+      // Get user's API keys if they want to use their own billing
+      let userApiKeys: Awaited<ReturnType<typeof db.getUserApiKeys>> = [];
+      if (input.useUserApiKey) {
+        userApiKeys = await db.getUserApiKeys(ctx.user.id);
+      }
+
       for (const modelId of debate.participantModels) {
         const model = getModelById(modelId);
         if (!model) continue;
@@ -366,12 +372,12 @@ export const debateRouter = router({
         let apiProvider: "openrouter" | "anthropic" | "openai" | "google" | null = null;
 
         if (input.useUserApiKey) {
-          const openRouterKey = await db.getUserApiKeyByProvider(ctx.user.id, "openrouter");
+          const openRouterKey = userApiKeys.find(k => k.provider === "openrouter");
           if (openRouterKey) {
             userApiKey = openRouterKey.apiKey;
             apiProvider = "openrouter";
           } else {
-            const providerKey = await db.getUserApiKeyByProvider(ctx.user.id, model.provider as "anthropic" | "openai" | "google");
+            const providerKey = userApiKeys.find(k => k.provider === model.provider);
             if (providerKey) {
               userApiKey = providerKey.apiKey;
               apiProvider = model.provider as "anthropic" | "openai" | "google";
