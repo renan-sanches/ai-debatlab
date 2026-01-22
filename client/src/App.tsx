@@ -10,7 +10,6 @@ import Library from "./pages/Library";
 import Settings from "./pages/Settings";
 import Leaderboard from "./pages/Leaderboard";
 import Login from "./pages/Login";
-import AuthCallback from "./pages/AuthCallback";
 import Account from "./pages/Account";
 
 function Router() {
@@ -18,7 +17,6 @@ function Router() {
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/login" component={Login} />
-      <Route path="/auth/callback" component={AuthCallback} />
       <Route path="/debate/:id" component={Debate} />
       <Route path="/library" component={Library} />
       <Route path="/settings" component={Settings} />

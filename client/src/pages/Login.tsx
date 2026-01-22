@@ -4,12 +4,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  signInWithEmail,
-  signUpWithEmail,
-  signInWithProvider,
-} from "@/lib/supabase";
 import { Loader2, Mail, Lock, User, Github, Sparkles } from "lucide-react";
+import { auth } from "@/lib/firebase";
+import {
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  signInWithPopup,
+  GoogleAuthProvider,
+  GithubAuthProvider
+} from "firebase/auth";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -33,14 +37,10 @@ export default function Login() {
     setError(null);
 
     try {
-      const { error } = await signInWithEmail(signInEmail, signInPassword);
-      if (error) {
-        setError(error.message);
-      } else {
-        setLocation("/");
-      }
-    } catch (err) {
-      setError("An unexpected error occurred");
+      await signInWithEmailAndPassword(auth, signInEmail, signInPassword);
+      setLocation("/");
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -64,39 +64,35 @@ export default function Login() {
     }
 
     try {
-      const { error } = await signUpWithEmail(
-        signUpEmail,
-        signUpPassword,
-        signUpName
-      );
-      if (error) {
-        setError(error.message);
-      } else {
-        setMessage("Check your email to confirm your account!");
-        setSignUpName("");
-        setSignUpEmail("");
-        setSignUpPassword("");
-        setSignUpConfirmPassword("");
+      const userCredential = await createUserWithEmailAndPassword(auth, signUpEmail, signUpPassword);
+      if (signUpName) {
+        await updateProfile(userCredential.user, { displayName: signUpName });
       }
-    } catch (err) {
-      setError("An unexpected error occurred");
+      setMessage("Account created! Redirecting...");
+      setTimeout(() => setLocation("/"), 1500);
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleOAuthSignIn = async (provider: "google" | "github") => {
+  const handleOAuthSignIn = async (providerName: "google" | "github") => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const { error } = await signInWithProvider(provider);
-      if (error) {
-        setError(error.message);
-        setIsLoading(false);
+      let provider;
+      if (providerName === "google") {
+        provider = new GoogleAuthProvider();
+      } else {
+        provider = new GithubAuthProvider();
       }
-    } catch (err) {
-      setError("An unexpected error occurred");
+      await signInWithPopup(auth, provider);
+      setLocation("/");
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred");
+    } finally {
       setIsLoading(false);
     }
   };

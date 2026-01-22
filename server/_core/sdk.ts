@@ -13,7 +13,7 @@
 
 import type { Request } from "express";
 import type { User } from "../../drizzle/schema";
-import { authenticateRequest } from "../supabase";
+import { authenticateRequest } from "../auth";
 
 // Legacy type - kept for backwards compatibility
 export type SessionPayload = {

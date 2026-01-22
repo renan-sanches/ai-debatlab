@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
-import { supabase, getAccessToken, signOut as supabaseSignOut } from "@/lib/supabase";
+import { auth } from "@/lib/firebase";
+import { onAuthStateChanged, signOut, User as FirebaseUser } from "firebase/auth";
 import { trpc } from "@/lib/trpc";
-import type { Session, User as SupabaseUser } from "@supabase/supabase-js";
 
 type UseAuthOptions = {
   redirectOnUnauthenticated?: boolean;
@@ -12,53 +12,37 @@ type UseAuthOptions = {
 export function useAuth(options?: UseAuthOptions) {
   const { redirectOnUnauthenticated = false, redirectPath = "/login" } = options ?? {};
   const [, setLocation] = useLocation();
-  const [session, setSession] = useState<Session | null>(null);
-  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
+  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
   const utils = trpc.useUtils();
 
-  // Get user from our backend (synced with Supabase)
+  // Get user from our backend
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
-    enabled: !!session, // Only fetch when we have a Supabase session
+    enabled: !!firebaseUser, // Only fetch when we have a Firebase user
   });
 
-  // Initialize session from Supabase
+  // Listen for auth changes
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setSupabaseUser(session?.user ?? null);
-      setIsLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        setFirebaseUser(user);
+        setIsLoading(false);
+
+        if (user) {
+            utils.auth.me.invalidate();
+        } else {
+            utils.auth.me.setData(undefined, null);
+        }
     });
 
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setSupabaseUser(session?.user ?? null);
-        
-        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-          // Refresh our backend user data
-          utils.auth.me.invalidate();
-        } else if (event === "SIGNED_OUT") {
-      utils.auth.me.setData(undefined, null);
-        }
-        
-        setIsLoading(false);
-      }
-    );
-
-    return () => {
-      subscription.unsubscribe();
-    };
+    return () => unsubscribe();
   }, [utils]);
 
   const logout = useCallback(async () => {
     try {
-      await supabaseSignOut();
+      await signOut(auth);
       utils.auth.me.setData(undefined, null);
       setLocation("/login");
     } catch (error) {
@@ -76,18 +60,16 @@ export function useAuth(options?: UseAuthOptions) {
     
     return {
       user,
-      supabaseUser,
-      session,
-      loading: isLoading || (!!session && meQuery.isLoading),
+      firebaseUser,
+      loading: isLoading || (!!firebaseUser && meQuery.isLoading),
       error: meQuery.error ?? null,
-      isAuthenticated: !!session && !!user,
+      isAuthenticated: !!firebaseUser && !!user,
     };
   }, [
     meQuery.data,
     meQuery.error,
     meQuery.isLoading,
-    supabaseUser,
-    session,
+    firebaseUser,
     isLoading,
   ]);
 
@@ -95,7 +77,7 @@ export function useAuth(options?: UseAuthOptions) {
   useEffect(() => {
     if (!redirectOnUnauthenticated) return;
     if (isLoading) return;
-    if (session) return;
+    if (firebaseUser) return;
     if (typeof window === "undefined") return;
     if (window.location.pathname === redirectPath) return;
     if (window.location.pathname === "/login") return;
@@ -106,7 +88,7 @@ export function useAuth(options?: UseAuthOptions) {
     redirectOnUnauthenticated,
     redirectPath,
     isLoading,
-    session,
+    firebaseUser,
     setLocation,
   ]);
 
@@ -114,6 +96,5 @@ export function useAuth(options?: UseAuthOptions) {
     ...state,
     refresh: () => meQuery.refetch(),
     logout,
-    getAccessToken,
   };
 }
