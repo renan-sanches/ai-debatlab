@@ -259,9 +259,24 @@ export async function prepareDebatePrompt(params: {
 
   // Get previous moderator synthesis if round > 1
   let moderatorSynthesis: string | undefined;
+  let debateHistory: string | undefined;
+
   if (roundNumber > 1) {
     const prevRound = rounds.find(r => r.roundNumber === roundNumber - 1);
     moderatorSynthesis = prevRound?.moderatorSynthesis || undefined;
+
+    // Build debate history for previous rounds
+    const previousRounds = rounds
+      .filter(r => r.roundNumber < roundNumber)
+      .sort((a, b) => a.roundNumber - b.roundNumber);
+
+    debateHistory = previousRounds.map(r => {
+      // For round 1, question is in debate.question
+      // For subsequent rounds, question is in r.followUpQuestion
+      const q = r.roundNumber === 1 ? debate.question : (r.followUpQuestion || "No question recorded");
+      const summary = r.moderatorSynthesis || "No summary available.";
+      return `ROUND ${r.roundNumber}:\nQuestion: ${q}\nModerator Summary: ${summary}`;
+    }).join("\n\n");
   }
 
   // Determine if this model is the devil's advocate
@@ -285,6 +300,7 @@ export async function prepareDebatePrompt(params: {
     previousResponses,
     roundNumber,
     moderatorSynthesis,
+    debateHistory,
     modelName: model.name,
     modelLens: model.lens || "general analysis", // Provide default for models without specific lens
     imageUrl: debate.imageUrl || undefined,
