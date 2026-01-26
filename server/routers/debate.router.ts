@@ -8,8 +8,6 @@ import * as db from "../db";
 import { AI_MODELS, getModelById } from "../../shared/models";
 import { invokeLLMWithModel } from "../llmHelper";
 import {
-  buildStandardParticipantPrompt,
-  buildDevilsAdvocatePrompt,
   buildVotingPrompt,
   buildModeratorPrompt,
   buildDiscourseAnalyticsPrompt,
@@ -20,6 +18,7 @@ import { extractPdfForPrompt } from "../pdfExtractor";
 import { assignRandomAvatars } from "../config/avatarConfig";
 import { evaluateResponse } from "../services/scoringService";
 import { asyncPool } from "../utils";
+import { prepareDebatePrompt, getUserApiKeyForModel } from "../services/debateService";
 
 /**
  * Generate a short, descriptive title for a debate question
@@ -198,82 +197,23 @@ export const debateRouter = router({
         throw new Error("Debate not found");
       }
 
-      const model = getModelById(input.modelId);
-      if (!model) throw new Error("Model not found");
-
       // Get existing responses in this round
       const existingResponses = await db.getResponsesByRoundId(input.roundId);
-      const previousResponses = formatResponsesForContext(
-        existingResponses.map(r => ({
-          modelName: r.modelName,
-          content: r.content,
-          isDevilsAdvocate: r.isDevilsAdvocate,
-        }))
-      );
 
-      // Get round info
-      const rounds = await db.getRoundsByDebateId(input.debateId);
-      const currentRound = rounds.find(r => r.id === input.roundId);
-      const roundNumber = currentRound?.roundNumber || 1;
-
-      // Get previous moderator synthesis if round > 1
-      let moderatorSynthesis: string | undefined;
-      if (roundNumber > 1) {
-        const prevRound = rounds.find(r => r.roundNumber === roundNumber - 1);
-        moderatorSynthesis = prevRound?.moderatorSynthesis || undefined;
-      }
-
-      // Determine if this model is the devil's advocate
-      const isDevilsAdvocate = debate.devilsAdvocateEnabled && debate.devilsAdvocateModel === input.modelId;
-
-      // Extract PDF content if available
-      let pdfContent: string | undefined;
-      if (debate.pdfUrl) {
-        try {
-          pdfContent = await extractPdfForPrompt(debate.pdfUrl);
-          console.log(`[PDF] Extracted ${pdfContent.length} chars from PDF for debate ${input.debateId}`);
-        } catch (error) {
-          console.error(`[PDF] Failed to extract PDF content:`, error);
-        }
-      }
-
-      // Build prompt
-      const question = currentRound?.followUpQuestion || debate.question;
-      const promptContext = {
-        userQuestion: question,
-        previousResponses,
-        roundNumber,
-        moderatorSynthesis,
-        modelName: model.name,
-        modelLens: model.lens,
-        imageUrl: debate.imageUrl || undefined,
-        pdfUrl: debate.pdfUrl || undefined,
-        pdfContent,
-      };
-
-      const prompt = isDevilsAdvocate
-        ? buildDevilsAdvocatePrompt(promptContext)
-        : buildStandardParticipantPrompt(promptContext);
+      // Prepare prompt using shared service
+      const { prompt, isDevilsAdvocate, model, promptContext } = await prepareDebatePrompt({
+        debate,
+        roundId: input.roundId,
+        modelId: input.modelId,
+        existingResponses,
+      });
 
       // Get user's API key if they want to use their own billing
-      let userApiKey: string | null = null;
-      let apiProvider: "openrouter" | "anthropic" | "openai" | "google" | null = null;
-
-      if (input.useUserApiKey) {
-        // Try OpenRouter first (most flexible)
-        const openRouterKey = await db.getUserApiKeyByProvider(ctx.user.id, "openrouter");
-        if (openRouterKey) {
-          userApiKey = openRouterKey.apiKey;
-          apiProvider = "openrouter";
-        } else {
-          // Try provider-specific key
-          const providerKey = await db.getUserApiKeyByProvider(ctx.user.id, model.provider as "anthropic" | "openai" | "google");
-          if (providerKey) {
-            userApiKey = providerKey.apiKey;
-            apiProvider = model.provider as "anthropic" | "openai" | "google";
-          }
-        }
-      }
+      const { userApiKey, apiProvider } = await getUserApiKeyForModel(
+        ctx.user.id,
+        model,
+        input.useUserApiKey || false
+      );
 
       // Call LLM
       const response = await invokeLLMWithModel({
@@ -301,7 +241,7 @@ export const debateRouter = router({
 
       // Trigger async scoring
       if (model) {
-        evaluateResponse(responseId, content, question, model.name).catch(e =>
+        evaluateResponse(responseId, content, promptContext.userQuestion, model.name).catch(e =>
           console.error("[Scoring Trigger Failed]", e)
         );
       }
