@@ -51,7 +51,7 @@ import { appRouter } from "./routers";
 function createAuthContext(): { ctx: TrpcContext } {
   const user = {
     id: 1,
-    openId: "test-user",
+    firebaseUid: "test-user",
     email: "test@example.com",
     name: "Test User",
     loginMethod: "manus",
@@ -59,7 +59,6 @@ function createAuthContext(): { ctx: TrpcContext } {
     createdAt: new Date(),
     updatedAt: new Date(),
     lastSignedIn: new Date(),
-    supabaseId: "test-user-id",
   };
 
   const ctx: TrpcContext = {

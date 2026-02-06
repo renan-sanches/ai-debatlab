@@ -397,10 +397,12 @@ export default function Leaderboard() {
                         </div>
                         <div className="text-right">
                           <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">
-                            Efficiency
+                            PPD
                           </p>
                           <p className="text-3xl font-bold text-primary italic">
-                            A+
+                            {modelStats.totalDebates > 0
+                              ? (modelStats.totalPoints / modelStats.totalDebates).toFixed(1)
+                              : "—"}
                           </p>
                         </div>
                       </div>

@@ -38,7 +38,7 @@ type AuthenticatedUser = NonNullable<TrpcContext["user"]>;
 function createAuthContext(): { ctx: TrpcContext } {
   const user: AuthenticatedUser = {
     id: 1,
-    openId: "test-user",
+    firebaseUid: "test-user",
     email: "test@example.com",
     name: "Test User",
     loginMethod: "manus",

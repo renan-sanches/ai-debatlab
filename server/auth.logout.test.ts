@@ -15,7 +15,7 @@ function createAuthContext(): { ctx: TrpcContext; clearedCookies: CookieCall[] }
 
   const user: AuthenticatedUser = {
     id: 1,
-    openId: "sample-user",
+    firebaseUid: "sample-user",
     email: "sample@example.com",
     name: "Sample User",
     loginMethod: "manus",
@@ -42,13 +42,13 @@ function createAuthContext(): { ctx: TrpcContext; clearedCookies: CookieCall[] }
 }
 
 describe("auth.logout", () => {
-  it("returns success (logout handled client-side via Supabase)", async () => {
+  it("returns success (logout handled client-side via Firebase)", async () => {
     const { ctx } = createAuthContext();
     const caller = appRouter.createCaller(ctx);
 
     const result = await caller.auth.logout();
 
-    // With Supabase auth, logout is handled client-side via supabase.auth.signOut()
+    // With Firebase auth, logout is handled client-side via firebase.auth.signOut()
     // The server endpoint just confirms the operation can proceed
     expect(result).toEqual({ success: true });
   });

@@ -175,12 +175,7 @@ function ResponseCard({
       {/* Footer */}
       <div className="p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/30">
         <div className="flex items-center gap-2">
-          <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-emerald-500 transition-colors">
-            <ThumbsUp className="w-4 h-4" />
-          </button>
-          <button className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-red-500 transition-colors">
-            <ThumbsDown className="w-4 h-4" />
-          </button>
+          <span className="sr-only">Response actions</span>
           {voteCount !== undefined && voteCount > 0 && (
             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/30 rounded-lg">
               <Trophy className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
@@ -190,8 +185,8 @@ function ResponseCard({
             </div>
           )}
         </div>
-        <button className="text-xs font-bold text-primary hover:text-primary-hover flex items-center gap-1 transition-colors uppercase tracking-wide">
-          View Logs <ExternalLink className="w-3 h-3" />
+        <button className="text-xs font-bold text-primary hover:text-primary-hover flex items-center gap-1 transition-colors uppercase tracking-wide" onClick={() => navigator.clipboard.writeText(content)}>
+          Copy <ExternalLink className="w-3 h-3" />
         </button>
       </div>
     </article>
@@ -651,7 +646,7 @@ export default function Debate() {
             </button>
           </div>
           <p className="text-xs text-slate-500 mt-3 font-medium">
-            DebateLab v1.4.2
+            AI DebateLab
           </p>
         </div>
       </aside>
@@ -961,7 +956,7 @@ export default function Debate() {
             </div>
             <div className="text-center mt-3">
               <p className="text-[10px] text-slate-400 uppercase tracking-widest font-semibold">
-                AI DebateLab Dashboard v1.4.2 — Built for Researchers & Educators
+                AI DebateLab — Built for Researchers & Educators
               </p>
             </div>
           </div>

@@ -47,44 +47,7 @@ function getModelEmoji(modelId: string): { emoji: string; bgColor: string; borde
   return { emoji: '🤖', bgColor: 'bg-gray-100 dark:bg-gray-800', borderColor: 'border-gray-500', shadowColor: 'shadow-[0_0_15px_rgba(107,114,128,0.25)]' };
 }
 
-// Helper function to estimate duration from debate data
-function estimateDuration(debate: any): string {
-  if (debate.duration) {
-    const minutes = Math.floor(debate.duration / 60);
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-
-    if (hours > 0) {
-      return `${hours}h ${remainingMinutes}m`;
-    }
-    return `${minutes}m`;
-  }
-
-  // Derive a stable estimate from the debate ID and participant count
-  const participantCount = (debate.participantModels as string[])?.length || 2;
-  const estimatedMinutes = ((debate.id * 7 + participantCount * 13) % 120) + 30;
-  const hours = Math.floor(estimatedMinutes / 60);
-  const remainingMinutes = estimatedMinutes % 60;
-
-  if (hours > 0) {
-    return `${hours}h ${remainingMinutes}m`;
-  }
-  return `${estimatedMinutes}m`;
-}
-
-// Helper function to estimate intensity
-function estimateIntensity(debate: any): { level: string; Icon: typeof Flame; color: string } {
-  const intensityLevels = [
-    { level: "High Intensity", Icon: Flame, color: "text-red-400" },
-    { level: "Med Intensity", Icon: Zap, color: "text-yellow-500" },
-    { level: "Extreme Intensity", Icon: Flame, color: "text-orange-500" },
-  ];
-
-  // Derive a stable index from the debate ID
-  return intensityLevels[debate.id % intensityLevels.length];
-}
-
-// Helper function to determine winner/consensus
+// Helper function to determine winner/consensus from actual debate data
 function getDebateOutcome(debate: any): {
   type: 'winner' | 'consensus' | null;
   model?: string;
@@ -100,7 +63,7 @@ function getDebateOutcome(debate: any): {
     return {
       type: 'winner',
       model: debate.winner,
-      summary: debate.winningSummary || "Compelling arguments based on data-driven insights and logical reasoning.",
+      summary: debate.winningSummary,
       borderColor: 'border-yellow-500',
       iconColor: 'text-yellow-500',
     };
@@ -109,35 +72,17 @@ function getDebateOutcome(debate: any): {
   if (debate.consensus) {
     return {
       type: 'consensus',
-      summary: debate.consensusSummary || "Both models reached agreement on key foundational principles.",
+      summary: debate.consensusSummary,
       borderColor: 'border-blue-400',
       iconColor: 'text-blue-400',
     };
   }
 
-  // Derive a stable outcome from the debate ID instead of random values
-  const hasWinner = debate.id % 5 !== 0; // ~80% have a winner
-
-  if (hasWinner) {
-    const participantModels = debate.participantModels as string[];
-    const winnerModel = participantModels[debate.id % participantModels.length];
-    const model = AI_MODELS.find(m => m.id === winnerModel);
-    const isYellow = debate.id % 2 === 0;
-
-    return {
-      type: 'winner',
-      model: model?.name || winnerModel,
-      summary: "Compelling arguments based on data-driven insights and logical reasoning.",
-      borderColor: isYellow ? 'border-yellow-500' : 'border-cyan-500',
-      iconColor: isYellow ? 'text-yellow-500' : 'text-cyan-500',
-    };
-  }
-
+  // No result data available - show neutral state
   return {
-    type: 'consensus',
-    summary: "Both models reached agreement on key foundational principles.",
-    borderColor: 'border-blue-400',
-    iconColor: 'text-blue-400',
+    type: null,
+    borderColor: 'border-slate-300',
+    iconColor: 'text-slate-400',
   };
 }
 
@@ -331,8 +276,6 @@ export default function Library() {
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               {filteredDebates.map((debate) => {
                 const participantModels = debate.participantModels as string[];
-                const duration = estimateDuration(debate);
-                const intensity = estimateIntensity(debate);
                 const outcome = getDebateOutcome(debate);
 
                 return (
@@ -354,10 +297,7 @@ export default function Library() {
                             {debate.status}
                           </span>
                           <span className="text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1">
-                            <Clock className="w-3.5 h-3.5" /> {duration}
-                          </span>
-                          <span className={`text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1`}>
-                            <intensity.Icon className={`w-3.5 h-3.5 ${intensity.color}`} /> {intensity.level}
+                            <Clock className="w-3.5 h-3.5" /> {participantModels.length} models
                           </span>
                         </div>
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight line-clamp-2">
@@ -476,13 +416,6 @@ export default function Library() {
                         </button>
                       )}
 
-                      <button
-                        className="w-12 h-10 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors active:scale-95 touch-manipulation min-h-[44px]"
-                        title="Download"
-                      >
-                        <Download className="w-5 h-5" />
-                      </button>
-
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <button
@@ -525,14 +458,6 @@ export default function Library() {
             </div>
           )}
 
-          {/* Load More */}
-          {filteredDebates && filteredDebates.length > 0 && (
-            <div className="flex justify-center pt-8 pb-8">
-              <button className="text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-neon-blue dark:hover:text-neon-blue transition-colors flex items-center gap-2 px-6 py-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-                <History className="w-4 h-4" /> Load older debates
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </DashboardLayout>
