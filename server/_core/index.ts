@@ -13,7 +13,13 @@ import streamingRoutes from "../streamingRoutes";
 import { apiLimiter, streamingLimiter, authLimiter } from "../middleware/rateLimit";
 import { getDb } from "../db";
 
+// Build ID is set at build time; helps verify which version is deployed
+const BUILD_ID = process.env.BUILD_ID || "local";
+const BUILD_TIME = process.env.BUILD_TIME || new Date().toISOString();
+
 // Log startup environment for debugging
+console.log("[Startup] BUILD_ID:", BUILD_ID);
+console.log("[Startup] BUILD_TIME:", BUILD_TIME);
 console.log("[Startup] NODE_ENV:", process.env.NODE_ENV);
 console.log("[Startup] PORT:", process.env.PORT);
 console.log("[Startup] CWD:", process.cwd());
@@ -77,10 +83,12 @@ async function startServer() {
     try {
       const db = await getDb();
       const dbStatus = db ? "connected" : "not_configured";
-      
+
       res.json({
         status: db ? "healthy" : "degraded",
         database: dbStatus,
+        buildId: BUILD_ID,
+        buildTime: BUILD_TIME,
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || "development",
       });
