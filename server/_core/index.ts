@@ -61,7 +61,10 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
-  
+
+  // Trust proxy (required for Cloud Run / load balancers that set X-Forwarded-For)
+  app.set("trust proxy", 1);
+
   // Sentry request handler (must be first middleware)
   if (process.env.SENTRY_DSN) {
     Sentry.setupExpressErrorHandler(app);
