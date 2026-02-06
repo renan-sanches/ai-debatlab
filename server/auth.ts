@@ -76,26 +76,14 @@ export async function authenticateRequest(req: Request) {
     return null;
   }
 
-  // Get or create user in our database
-  let user = await db.getUserByFirebaseUid(decodedToken.uid);
+  // Get or create user in our database using upsert (ON CONFLICT) to prevent race conditions
+  await db.upsertUser({
+    firebaseUid: decodedToken.uid,
+    name: decodedToken.name || decodedToken.email || "Anonymous",
+    email: decodedToken.email || null,
+    loginMethod: decodedToken.firebase.sign_in_provider || "unknown",
+    lastSignedIn: new Date(),
+  });
 
-  if (!user) {
-    // Create user in our database
-    await db.upsertUser({
-      firebaseUid: decodedToken.uid,
-      name: decodedToken.name || decodedToken.email || "Anonymous",
-      email: decodedToken.email || null,
-      loginMethod: decodedToken.firebase.sign_in_provider || "unknown",
-      lastSignedIn: new Date(),
-    });
-    user = await db.getUserByFirebaseUid(decodedToken.uid);
-  } else {
-    // Update last signed in
-    await db.upsertUser({
-        firebaseUid: decodedToken.uid,
-        lastSignedIn: new Date(),
-    });
-  }
-
-  return user;
+  return await db.getUserByFirebaseUid(decodedToken.uid);
 }

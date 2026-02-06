@@ -14,7 +14,7 @@ export async function createContext(
   let user: User | null = null;
 
   try {
-    // authenticateRequest handles both dev mode bypass and Supabase auth
+    // authenticateRequest handles both dev mode bypass and Firebase auth
     user = await authenticateRequest(opts.req) ?? null;
   } catch (error) {
     // Authentication is optional for public procedures.
