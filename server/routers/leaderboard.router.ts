@@ -73,7 +73,7 @@ export const leaderboardRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       // Get all debate results where both models participated
-      const allResults = await db.getDebateResultsByUserId(ctx.user.id);
+      const results = await db.getHeadToHeadDebateResults(ctx.user.id, input.modelA, input.modelB);
       
       let debatesTogether = 0;
       let modelAModeratorPicks = 0;
@@ -83,7 +83,7 @@ export const leaderboardRouter = router({
       let modelAPoints = 0;
       let modelBPoints = 0;
 
-      allResults.forEach(result => {
+      results.forEach(result => {
         const pointsA = result.pointsAwarded?.[input.modelA];
         const pointsB = result.pointsAwarded?.[input.modelB];
         
