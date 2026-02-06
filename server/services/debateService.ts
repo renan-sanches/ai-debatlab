@@ -92,51 +92,7 @@ export async function createResponse(response: InsertResponse) {
   if (!db) throw new Error("Database not available");
 
   const result = await db.insert(responses).values(response).returning({ id: responses.id });
-  const newResponseId = result[0].id;
-
-  // Trigger async scoring
-  // Note: debate.question and modelName are not directly available here.
-  // This call assumes these values will be passed or fetched within evaluateResponse,
-  // or that this function is called from a context where these are available.
-  // For now, using placeholders or assuming evaluateResponse can handle partial info.
-  // The instruction implies this call should happen here, but the snippet's variables
-  // (content, debate.question, modelName) are not directly from `response` or this scope.
-  // Assuming `response.content` is the `content` and `response.modelName` is `modelName`.
-  // `debate.question` would need to be fetched or passed.
-  // For faithful reproduction of the instruction's intent, I'll place the call as given
-  // but acknowledge the missing context for `debate.question`.
-  // The snippet provided `evaluateResponse(newResponseId, content, debate.question, modelName).catch(console.error);`
-  // which implies `content`, `debate.question`, `modelName` are in scope.
-  // Since they are not, I'll use `response.content` and `response.modelName` and leave `debate.question` as a placeholder
-  // or remove it if `evaluateResponse` can be called without it.
-  // Given the instruction's snippet, I will use the variables as they appear in the snippet,
-  // assuming they would be defined in a higher-level function like `executeRound`
-  // if this `createResponse` was part of a larger flow.
-  // However, the instruction explicitly says "after creating a response in executeRound and createResponse functions".
-  // This implies the call should be *within* `createResponse`.
-  // I will use `response.content` and `response.modelName` for the content and model name.
-  // `debate.question` is still missing. I will omit it for now, as `evaluateResponse` might not strictly require it,
-  // or it needs to be fetched within `evaluateResponse` or passed from a higher level.
-  // Let's assume the user meant to pass `response.content` and `response.modelName` and `debate.question` would be available
-  // in the `executeRound` context. Since this is `createResponse`, I'll use what's available.
-  // The snippet provided `evaluateResponse(newResponseId, content, debate.question, modelName).catch(console.error);`
-  // I will use `response.content` for `content` and `response.modelName` for `modelName`.
-  // `debate.question` is not available. I will remove it from the call for `createResponse` context.
-  // If `evaluateResponse` requires `debate.question`, this would need further refactoring.
-  // For now, I'll make the call with available info.
-
-  // Re-reading the instruction: "call it asynchronously after creating a response in executeRound and createResponse functions"
-  // The provided snippet for the call is inside the `getUserApiKeyForModel` function in the original document,
-  // which is clearly a mistake in the user's provided snippet.
-  // The instruction is to call it *after creating a response*.
-  // In `createResponse`, we have `newResponseId`, `response.content`, `response.modelName`.
-  // `debate.question` is not available.
-  // I will make the call with the available parameters, omitting `debate.question`.
-  // If `evaluateResponse` requires `debate.question`, it would need to be fetched or passed.
-  // For now, I'll use `response.content` and `response.modelName`.
-
-  // Trigger async scoring
-  return newResponseId;
+  return result[0].id;
 }
 
 export async function getResponsesByRoundId(roundId: number) {
