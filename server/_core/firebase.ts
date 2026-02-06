@@ -10,6 +10,9 @@ const formatPrivateKey = (key: string) => {
 
 if (getApps().length === 0) {
   try {
+    console.log("[Firebase] projectId:", ENV.firebaseProjectId ? "SET" : "EMPTY");
+    console.log("[Firebase] clientEmail:", ENV.firebaseClientEmail ? "SET" : "EMPTY");
+    console.log("[Firebase] privateKey length:", ENV.firebasePrivateKey.length, "starts with:", ENV.firebasePrivateKey.substring(0, 10));
     if (ENV.firebaseProjectId && ENV.firebaseClientEmail && ENV.firebasePrivateKey) {
       initializeApp({
         credential: cert({
@@ -17,7 +20,6 @@ if (getApps().length === 0) {
           clientEmail: ENV.firebaseClientEmail,
           privateKey: formatPrivateKey(ENV.firebasePrivateKey),
         }),
-        // Optional: storageBucket: `${ENV.firebaseProjectId}.appspot.com`
       });
       console.log("[Firebase] Admin SDK initialized");
     } else {
