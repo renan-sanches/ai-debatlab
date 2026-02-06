@@ -60,7 +60,9 @@ function estimateDuration(debate: any): string {
     return `${minutes}m`;
   }
 
-  const estimatedMinutes = Math.floor(Math.random() * 120) + 30; // Random 30-150 min
+  // Derive a stable estimate from the debate ID and participant count
+  const participantCount = (debate.participantModels as string[])?.length || 2;
+  const estimatedMinutes = ((debate.id * 7 + participantCount * 13) % 120) + 30;
   const hours = Math.floor(estimatedMinutes / 60);
   const remainingMinutes = estimatedMinutes % 60;
 
@@ -78,7 +80,8 @@ function estimateIntensity(debate: any): { level: string; Icon: typeof Flame; co
     { level: "Extreme Intensity", Icon: Flame, color: "text-orange-500" },
   ];
 
-  return intensityLevels[Math.floor(Math.random() * intensityLevels.length)];
+  // Derive a stable index from the debate ID
+  return intensityLevels[debate.id % intensityLevels.length];
 }
 
 // Helper function to determine winner/consensus
@@ -112,19 +115,21 @@ function getDebateOutcome(debate: any): {
     };
   }
 
-  const hasWinner = Math.random() > 0.4;
+  // Derive a stable outcome from the debate ID instead of random values
+  const hasWinner = debate.id % 5 !== 0; // ~80% have a winner
 
   if (hasWinner) {
     const participantModels = debate.participantModels as string[];
-    const winnerModel = participantModels[Math.floor(Math.random() * participantModels.length)];
+    const winnerModel = participantModels[debate.id % participantModels.length];
     const model = AI_MODELS.find(m => m.id === winnerModel);
+    const isYellow = debate.id % 2 === 0;
 
     return {
       type: 'winner',
       model: model?.name || winnerModel,
       summary: "Compelling arguments based on data-driven insights and logical reasoning.",
-      borderColor: Math.random() > 0.5 ? 'border-yellow-500' : 'border-cyan-500',
-      iconColor: Math.random() > 0.5 ? 'text-yellow-500' : 'text-cyan-500',
+      borderColor: isYellow ? 'border-yellow-500' : 'border-cyan-500',
+      iconColor: isYellow ? 'text-yellow-500' : 'text-cyan-500',
     };
   }
 
