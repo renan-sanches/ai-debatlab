@@ -244,8 +244,11 @@ export async function prepareDebatePrompt(params: {
   }
 
   // Format existing responses for context
+  // In Blind Mode, we hide other participants' responses for the current round
+  const responsesToFormat = debate.isBlindMode ? [] : existingResponses;
+
   const previousResponses = formatResponsesForContext(
-    existingResponses.map(r => ({
+    responsesToFormat.map(r => ({
       modelName: r.modelName,
       content: r.content,
       isDevilsAdvocate: r.isDevilsAdvocate,

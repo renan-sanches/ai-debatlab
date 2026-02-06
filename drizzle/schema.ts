@@ -39,6 +39,7 @@ export const debates = pgTable("debates", {
   devilsAdvocateEnabled: boolean("devils_advocate_enabled").default(false).notNull(),
   devilsAdvocateModel: varchar("devils_advocate_model", { length: 64 }),
   votingEnabled: boolean("voting_enabled").default(false).notNull(),
+  isBlindMode: boolean("is_blind_mode").default(false).notNull(),
   status: debateStatusEnum("status").default("active").notNull(),
   title: varchar("title", { length: 255 }),
   tags: json("tags").$type<string[]>().default([]),
