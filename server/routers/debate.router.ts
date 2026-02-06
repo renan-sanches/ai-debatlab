@@ -288,7 +288,6 @@ export const debateRouter = router({
       const rounds = await db.getRoundsByDebateId(input.debateId);
       const currentRound = rounds.find(r => r.id === input.roundId);
       const question = currentRound?.followUpQuestion || debate.question;
-
       // Build a map of all participant models for matching
       const participantModelsMap = debate.participantModels.map(id => {
         const m = getModelById(id);
@@ -428,14 +427,9 @@ export const debateRouter = router({
           }
 
           if (votedForParticipant && votedForParticipant.id !== modelId) {
-            await db.createVote({
-              roundId: input.roundId,
-              voterModelId: modelId,
-              votedForModelId: votedForParticipant.id,
-              reason: reason || voteContent.slice(0, 200),
-            });
-
+            // Return vote object for batch insertion
             return {
+              roundId: input.roundId,
               voterModelId: modelId,
               votedForModelId: votedForParticipant.id,
               reason: reason || voteContent.slice(0, 200),
@@ -447,11 +441,15 @@ export const debateRouter = router({
 
       const poolResults = await asyncPool(5, debate.participantModels, processVote);
 
-      const votes = poolResults
-        .filter((r): r is PromiseFulfilledResult<any> => r.status === "fulfilled" && r.value !== null)
+      const votesToInsert = poolResults
+        .filter((r): r is PromiseFulfilledResult<any> => r.status === "fulfilled" && r.value != null)
         .map(r => r.value);
 
-      return { votes };
+      if (votesToInsert.length > 0) {
+        await db.createVotes(votesToInsert);
+      }
+
+      return { votes: votesToInsert };
     }),
 
   // Generate moderator synthesis

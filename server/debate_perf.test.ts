@@ -11,6 +11,7 @@ const mocks = vi.hoisted(() => {
     getResponsesByRoundId: vi.fn(),
     getRoundsByDebateId: vi.fn(),
     createVote: vi.fn(),
+    createVotes: vi.fn(),
     getModelById: vi.fn(),
     buildVotingPrompt: vi.fn(),
     formatResponsesForContext: vi.fn(),
@@ -24,6 +25,7 @@ vi.mock("./db", () => ({
   getResponsesByRoundId: mocks.getResponsesByRoundId,
   getRoundsByDebateId: mocks.getRoundsByDebateId,
   createVote: mocks.createVote,
+  createVotes: mocks.createVotes,
   getUserApiKeyByProvider: mocks.getUserApiKeyByProvider,
   getUserApiKeys: mocks.getUserApiKeys,
 }));

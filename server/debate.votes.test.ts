@@ -16,6 +16,7 @@ vi.mock("./db", () => ({
   getResponsesByRoundId: vi.fn().mockResolvedValue([]),
   getRoundsByDebateId: vi.fn().mockResolvedValue([{ id: 1, roundNumber: 1 }]),
   createVote: vi.fn().mockResolvedValue(1),
+  createVotes: vi.fn().mockResolvedValue([1, 2]),
   getUserApiKeyByProvider: vi.fn().mockResolvedValue(null),
 }));
 
@@ -85,6 +86,13 @@ describe("debate.generateVotes", () => {
       voterModelId: "Beta",
       votedForModelId: "Alpha"
     }));
+
+    const db = await import("./db");
+    expect(db.createVotes).toHaveBeenCalledTimes(1);
+    expect(db.createVotes).toHaveBeenCalledWith(expect.arrayContaining([
+      expect.objectContaining({ voterModelId: "Alpha", votedForModelId: "Beta" }),
+      expect.objectContaining({ voterModelId: "Beta", votedForModelId: "Alpha" })
+    ]));
   });
 
   it("handles partial failures gracefully", async () => {
@@ -112,5 +120,9 @@ describe("debate.generateVotes", () => {
     expect(result.votes).toContainEqual(expect.objectContaining({
       voterModelId: "SuccessUser",
     }));
+
+    expect(db.createVotes).toHaveBeenCalledWith(expect.arrayContaining([
+      expect.objectContaining({ voterModelId: "SuccessUser" })
+    ]));
   });
 });
