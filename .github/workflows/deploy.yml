@@ -89,6 +89,6 @@ jobs:
       - name: Verify Cloud Run deployment
         run: |
           echo "Checking Cloud Run service status..."
-          gcloud run services describe api --region=us-central1 --format='value(status.url)'
-          gcloud run revisions list --service=api --region=us-central1 --limit=3
+          gcloud run services describe ai-debatlab --region=us-central1 --format='value(status.url)'
+          gcloud run revisions list --service=ai-debatlab --region=us-central1 --limit=3
 
