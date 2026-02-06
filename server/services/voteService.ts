@@ -11,6 +11,15 @@ export async function createVote(vote: InsertVote) {
     return result[0].id;
 }
 
+export async function createVotes(votesData: InsertVote[]) {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+    if (votesData.length === 0) return [];
+
+    const result = await db.insert(votes).values(votesData).returning({ id: votes.id });
+    return result.map(r => r.id);
+}
+
 export async function getVotesByRoundId(roundId: number) {
     const db = await getDb();
     if (!db) return [];

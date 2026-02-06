@@ -293,6 +293,11 @@ export const debateRouter = router({
         return { id, name: m?.name || id, model: m };
       });
 
+      // Fetch user API keys if needed
+      const userApiKeys = input.useUserApiKey
+        ? await db.getUserApiKeys(ctx.user.id)
+        : [];
+
       const processVote = async (modelId: string) => {
         const model = getModelById(modelId);
         if (!model) return null;
@@ -423,14 +428,9 @@ export const debateRouter = router({
           }
 
           if (votedForParticipant && votedForParticipant.id !== modelId) {
-            await db.createVote({
-              roundId: input.roundId,
-              voterModelId: modelId,
-              votedForModelId: votedForParticipant.id,
-              reason: reason || voteContent.slice(0, 200),
-            });
-
+            // Return vote object for batch insertion
             return {
+              roundId: input.roundId,
               voterModelId: modelId,
               votedForModelId: votedForParticipant.id,
               reason: reason || voteContent.slice(0, 200),
@@ -442,11 +442,15 @@ export const debateRouter = router({
 
       const poolResults = await asyncPool(5, debate.participantModels, processVote);
 
-      const votes = poolResults
-        .filter((r): r is PromiseFulfilledResult<any> => r.status === "fulfilled" && r.value !== null)
+      const votesToInsert = poolResults
+        .filter((r): r is PromiseFulfilledResult<any> => r.status === "fulfilled" && r.value != null)
         .map(r => r.value);
 
-      return { votes };
+      if (votesToInsert.length > 0) {
+        await db.createVotes(votesToInsert);
+      }
+
+      return { votes: votesToInsert };
     }),
 
   // Generate moderator synthesis
