@@ -3,8 +3,22 @@ import { getAuth } from "firebase-admin/auth";
 import { getStorage } from "firebase-admin/storage";
 import { ENV } from "./env";
 
-// Helper to format private key (handle newlines if passed as single string in env)
+// Helper to format private key
+// The deploy pipeline base64-encodes the key to preserve newlines through
+// gcloud substitutions. This function detects and decodes it, then handles
+// escaped newlines for backwards compatibility with raw keys.
 const formatPrivateKey = (key: string) => {
+  // Try base64 decode first (deployed via pipeline)
+  try {
+    const decoded = Buffer.from(key, "base64").toString("utf-8");
+    if (decoded.includes("PRIVATE KEY")) {
+      console.log("[Firebase] Private key decoded from base64");
+      return decoded;
+    }
+  } catch {
+    // Not base64, continue
+  }
+  // Fallback: replace escaped newlines (local dev / raw key)
   return key.replace(/\\n/g, "\n");
 };
 
