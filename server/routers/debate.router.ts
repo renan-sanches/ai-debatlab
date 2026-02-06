@@ -286,17 +286,14 @@ export const debateRouter = router({
       const rounds = await db.getRoundsByDebateId(input.debateId);
       const currentRound = rounds.find(r => r.id === input.roundId);
       const question = currentRound?.followUpQuestion || debate.question;
-
       // Build a map of all participant models for matching
       const participantModelsMap = debate.participantModels.map(id => {
         const m = getModelById(id);
         return { id, name: m?.name || id, model: m };
       });
 
-      // Fetch user API keys if needed
-      const userApiKeys = input.useUserApiKey
-        ? await db.getUserApiKeys(ctx.user.id)
-        : [];
+      // Pre-fetch user keys if needed, to avoid race conditions or repeated DB calls in the loop
+      const userKeys = input.useUserApiKey ? await db.getUserApiKeys(ctx.user.id) : [];
 
       const processVote = async (modelId: string) => {
         const model = getModelById(modelId);
@@ -316,12 +313,12 @@ export const debateRouter = router({
         let apiProvider: "openrouter" | "anthropic" | "openai" | "google" | null = null;
 
         if (input.useUserApiKey) {
-          const openRouterKey = userApiKeys.find(k => k.provider === "openrouter");
+          const openRouterKey = userKeys.find((k: { provider: string }) => k.provider === "openrouter");
           if (openRouterKey) {
             userApiKey = openRouterKey.apiKey;
             apiProvider = "openrouter";
           } else {
-            const providerKey = userApiKeys.find(k => k.provider === model.provider);
+            const providerKey = userKeys.find((k: { provider: string }) => k.provider === model.provider);
             if (providerKey) {
               userApiKey = providerKey.apiKey;
               apiProvider = model.provider as "anthropic" | "openai" | "google";
