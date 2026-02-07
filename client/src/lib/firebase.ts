@@ -14,8 +14,21 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
-export async function getAccessToken(): Promise<string | null> {
-    const user = auth.currentUser;
-    if (!user) return null;
-    return user.getIdToken();
+export function getAccessToken(): Promise<string | null> {
+  return new Promise((resolve) => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      unsubscribe();
+      if (user) {
+        try {
+          const token = await user.getIdToken();
+          resolve(token);
+        } catch (e) {
+          console.error("Failed to get ID token", e);
+          resolve(null);
+        }
+      } else {
+        resolve(null);
+      }
+    });
+  });
 }
