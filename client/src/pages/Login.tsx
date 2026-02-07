@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,8 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   GoogleAuthProvider,
   GithubAuthProvider
 } from "firebase/auth";
@@ -30,6 +31,23 @@ export default function Login() {
   const [signUpEmail, setSignUpEmail] = useState("");
   const [signUpPassword, setSignUpPassword] = useState("");
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState("");
+
+  // Handle OAuth redirect result
+  useEffect(() => {
+    const handleRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          // User successfully signed in via redirect
+          setLocation("/");
+        }
+      } catch (err: any) {
+        setError(err.message || "An error occurred during sign in");
+      }
+    };
+
+    handleRedirect();
+  }, [setLocation]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,11 +106,11 @@ export default function Login() {
       } else {
         provider = new GithubAuthProvider();
       }
-      await signInWithPopup(auth, provider);
-      setLocation("/");
+      // Use redirect instead of popup to avoid COOP issues
+      await signInWithRedirect(auth, provider);
+      // User will be redirected, no need to call setLocation here
     } catch (err: any) {
       setError(err.message || "An unexpected error occurred");
-    } finally {
       setIsLoading(false);
     }
   };
