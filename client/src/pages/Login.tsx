@@ -12,6 +12,7 @@ import {
   updateProfile,
   signInWithRedirect,
   getRedirectResult,
+  onAuthStateChanged,
   GoogleAuthProvider,
   GithubAuthProvider
 } from "firebase/auth";
@@ -31,6 +32,16 @@ export default function Login() {
   const [signUpEmail, setSignUpEmail] = useState("");
   const [signUpPassword, setSignUpPassword] = useState("");
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState("");
+
+  // Listen for auth state changes (fallback for redirect flow)
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setLocation("/");
+      }
+    });
+    return () => unsubscribe();
+  }, [setLocation]);
 
   // Handle OAuth redirect result
   useEffect(() => {
