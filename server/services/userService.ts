@@ -1,12 +1,12 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, desc } from "drizzle-orm";
 import { users, userApiKeys, userFavoriteModels, InsertUser, InsertUserApiKey } from "../../drizzle/schema";
 import { getDb } from "../_core/database";
 import { encrypt, decrypt, isEncrypted } from '../encryption';
 
 // User functions
 export async function upsertUser(user: InsertUser): Promise<void> {
-    if (!user.supabaseId) {
-        throw new Error("User supabaseId is required for upsert");
+    if (!user.firebaseUid) {
+        throw new Error("User firebaseUid is required for upsert");
     }
 
     const db = await getDb();
@@ -16,52 +16,40 @@ export async function upsertUser(user: InsertUser): Promise<void> {
     }
 
     try {
-        // Check if user exists
-        const existing = await db.select()
-            .from(users)
-            .where(eq(users.supabaseId, user.supabaseId))
-            .limit(1);
-
-        if (existing.length > 0) {
-            // Update existing user
-            const updateSet: Partial<InsertUser> = {
+        // Atomic upsert using ON CONFLICT to prevent race conditions
+        // when multiple concurrent requests try to create the same user
+        await db.insert(users).values({
+            firebaseUid: user.firebaseUid,
+            name: user.name,
+            email: user.email,
+            loginMethod: user.loginMethod,
+            role: user.role || "user",
+            lastSignedIn: user.lastSignedIn || new Date(),
+        }).onConflictDoUpdate({
+            target: users.firebaseUid,
+            set: {
                 updatedAt: new Date(),
                 lastSignedIn: user.lastSignedIn || new Date(),
-            };
-
-            if (user.name !== undefined) updateSet.name = user.name;
-            if (user.email !== undefined) updateSet.email = user.email;
-            if (user.loginMethod !== undefined) updateSet.loginMethod = user.loginMethod;
-            if (user.role !== undefined) updateSet.role = user.role;
-
-            await db.update(users)
-                .set(updateSet)
-                .where(eq(users.supabaseId, user.supabaseId));
-        } else {
-            // Insert new user
-            await db.insert(users).values({
-                supabaseId: user.supabaseId,
-                name: user.name,
-                email: user.email,
-                loginMethod: user.loginMethod,
-                role: user.role || "user",
-                lastSignedIn: user.lastSignedIn || new Date(),
-            });
-        }
+                ...(user.name !== undefined && { name: user.name }),
+                ...(user.email !== undefined && { email: user.email }),
+                ...(user.loginMethod !== undefined && { loginMethod: user.loginMethod }),
+                ...(user.role !== undefined && { role: user.role }),
+            },
+        });
     } catch (error) {
         console.error("[Database] Failed to upsert user:", error);
         throw error;
     }
 }
 
-export async function getUserBySupabaseId(supabaseId: string) {
+export async function getUserByFirebaseUid(firebaseUid: string) {
     const db = await getDb();
     if (!db) {
         console.warn("[Database] Cannot get user: database not available");
         return undefined;
     }
 
-    const result = await db.select().from(users).where(eq(users.supabaseId, supabaseId)).limit(1);
+    const result = await db.select().from(users).where(eq(users.firebaseUid, firebaseUid)).limit(1);
     return result.length > 0 ? result[0] : undefined;
 }
 
@@ -161,9 +149,6 @@ export async function getUserFavoriteModels(userId: number) {
         .where(eq(userFavoriteModels.userId, userId))
         .orderBy(desc(userFavoriteModels.createdAt));
 }
-
-// Need to import desc for getUserFavoriteModels
-import { desc } from "drizzle-orm";
 
 export async function addUserFavoriteModel(userId: number, openRouterId: string, modelName: string) {
     const db = await getDb();

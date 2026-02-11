@@ -92,51 +92,7 @@ export async function createResponse(response: InsertResponse) {
   if (!db) throw new Error("Database not available");
 
   const result = await db.insert(responses).values(response).returning({ id: responses.id });
-  const newResponseId = result[0].id;
-
-  // Trigger async scoring
-  // Note: debate.question and modelName are not directly available here.
-  // This call assumes these values will be passed or fetched within evaluateResponse,
-  // or that this function is called from a context where these are available.
-  // For now, using placeholders or assuming evaluateResponse can handle partial info.
-  // The instruction implies this call should happen here, but the snippet's variables
-  // (content, debate.question, modelName) are not directly from `response` or this scope.
-  // Assuming `response.content` is the `content` and `response.modelName` is `modelName`.
-  // `debate.question` would need to be fetched or passed.
-  // For faithful reproduction of the instruction's intent, I'll place the call as given
-  // but acknowledge the missing context for `debate.question`.
-  // The snippet provided `evaluateResponse(newResponseId, content, debate.question, modelName).catch(console.error);`
-  // which implies `content`, `debate.question`, `modelName` are in scope.
-  // Since they are not, I'll use `response.content` and `response.modelName` and leave `debate.question` as a placeholder
-  // or remove it if `evaluateResponse` can be called without it.
-  // Given the instruction's snippet, I will use the variables as they appear in the snippet,
-  // assuming they would be defined in a higher-level function like `executeRound`
-  // if this `createResponse` was part of a larger flow.
-  // However, the instruction explicitly says "after creating a response in executeRound and createResponse functions".
-  // This implies the call should be *within* `createResponse`.
-  // I will use `response.content` and `response.modelName` for the content and model name.
-  // `debate.question` is still missing. I will omit it for now, as `evaluateResponse` might not strictly require it,
-  // or it needs to be fetched within `evaluateResponse` or passed from a higher level.
-  // Let's assume the user meant to pass `response.content` and `response.modelName` and `debate.question` would be available
-  // in the `executeRound` context. Since this is `createResponse`, I'll use what's available.
-  // The snippet provided `evaluateResponse(newResponseId, content, debate.question, modelName).catch(console.error);`
-  // I will use `response.content` for `content` and `response.modelName` for `modelName`.
-  // `debate.question` is not available. I will remove it from the call for `createResponse` context.
-  // If `evaluateResponse` requires `debate.question`, this would need further refactoring.
-  // For now, I'll make the call with available info.
-
-  // Re-reading the instruction: "call it asynchronously after creating a response in executeRound and createResponse functions"
-  // The provided snippet for the call is inside the `getUserApiKeyForModel` function in the original document,
-  // which is clearly a mistake in the user's provided snippet.
-  // The instruction is to call it *after creating a response*.
-  // In `createResponse`, we have `newResponseId`, `response.content`, `response.modelName`.
-  // `debate.question` is not available.
-  // I will make the call with the available parameters, omitting `debate.question`.
-  // If `evaluateResponse` requires `debate.question`, it would need to be fetched or passed.
-  // For now, I'll use `response.content` and `response.modelName`.
-
-  // Trigger async scoring
-  return newResponseId;
+  return result[0].id;
 }
 
 export async function getResponsesByRoundId(roundId: number) {
@@ -153,20 +109,16 @@ export async function getResponsesByDebateId(debateId: number) {
   return db.select().from(responses).where(eq(responses.debateId, debateId)).orderBy(responses.createdAt);
 }
 
-// Full debate data retrieval - optimized to avoid N+1 queries
-export async function getFullDebateData(debateId: number) {
+// Helper to get rounds with data efficiently
+export async function getRoundsWithData(debateId: number) {
   const db = await getDb();
-  if (!db) return null;
-
-  // Fetch debate
-  const debate = await getDebateById(debateId);
-  if (!debate) return null;
+  if (!db) return [];
 
   // Fetch all rounds for this debate
   const debateRounds = await getRoundsByDebateId(debateId);
 
   if (debateRounds.length === 0) {
-    return { ...debate, rounds: [] };
+    return [];
   }
 
   // Batch fetch all responses for this debate
@@ -198,11 +150,23 @@ export async function getFullDebateData(debateId: number) {
   });
 
   // Assemble rounds with their data
-  const roundsWithData = debateRounds.map(round => ({
+  return debateRounds.map(round => ({
     ...round,
     responses: responsesByRound.get(round.id) || [],
     votes: votesByRound.get(round.id) || [],
   }));
+}
+
+// Full debate data retrieval - optimized to avoid N+1 queries
+export async function getFullDebateData(debateId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  // Fetch debate
+  const debate = await getDebateById(debateId);
+  if (!debate) return null;
+
+  const roundsWithData = await getRoundsWithData(debateId);
 
   return {
     ...debate,
@@ -236,8 +200,11 @@ export async function prepareDebatePrompt(params: {
   }
 
   // Format existing responses for context
+  // In Blind Mode, we hide other participants' responses for the current round
+  const responsesToFormat = debate.isBlindMode ? [] : existingResponses;
+
   const previousResponses = formatResponsesForContext(
-    existingResponses.map(r => ({
+    responsesToFormat.map(r => ({
       modelName: r.modelName,
       content: r.content,
       isDevilsAdvocate: r.isDevilsAdvocate,
@@ -251,9 +218,24 @@ export async function prepareDebatePrompt(params: {
 
   // Get previous moderator synthesis if round > 1
   let moderatorSynthesis: string | undefined;
+  let debateHistory: string | undefined;
+
   if (roundNumber > 1) {
     const prevRound = rounds.find(r => r.roundNumber === roundNumber - 1);
     moderatorSynthesis = prevRound?.moderatorSynthesis || undefined;
+
+    // Build debate history for previous rounds
+    const previousRounds = rounds
+      .filter(r => r.roundNumber < roundNumber)
+      .sort((a, b) => a.roundNumber - b.roundNumber);
+
+    debateHistory = previousRounds.map(r => {
+      // For round 1, question is in debate.question
+      // For subsequent rounds, question is in r.followUpQuestion
+      const q = r.roundNumber === 1 ? debate.question : (r.followUpQuestion || "No question recorded");
+      const summary = r.moderatorSynthesis || "No summary available.";
+      return `ROUND ${r.roundNumber}:\nQuestion: ${q}\nModerator Summary: ${summary}`;
+    }).join("\n\n");
   }
 
   // Determine if this model is the devil's advocate
@@ -277,6 +259,7 @@ export async function prepareDebatePrompt(params: {
     previousResponses,
     roundNumber,
     moderatorSynthesis,
+    debateHistory,
     modelName: model.name,
     modelLens: model.lens || "general analysis", // Provide default for models without specific lens
     imageUrl: debate.imageUrl || undefined,

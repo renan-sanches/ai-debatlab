@@ -1,13 +1,9 @@
 # Build stage
 FROM node:22-alpine AS builder
 
-# Build arguments for Vite env vars (needed at build time)
-ARG VITE_SUPABASE_URL
-ARG VITE_SUPABASE_ANON_KEY
-
-# Set as env vars so Vite can access them during build
-ENV VITE_SUPABASE_URL=$VITE_SUPABASE_URL
-ENV VITE_SUPABASE_ANON_KEY=$VITE_SUPABASE_ANON_KEY
+# Note: Firebase client config is now hard-coded in client/src/lib/firebase.ts
+# Firebase client config values are public (not secrets) - security is enforced
+# by Firebase Security Rules, not by hiding the API key
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@10.4.1 --activate
@@ -49,6 +45,8 @@ COPY --from=builder /app/dist ./dist
 # Copy necessary files for runtime
 COPY drizzle ./drizzle
 COPY shared ./shared
+COPY drizzle.config.ts ./
+COPY tsconfig.json ./
 
 # Create uploads directory for local file storage
 RUN mkdir -p uploads
@@ -62,4 +60,3 @@ EXPOSE 8080
 
 # Start the application
 CMD ["node", "dist/index.js"]
-

@@ -108,3 +108,5 @@ temp/
 
 # Local uploads directory (dev mode)
 uploads/
+gen-lang-client-*.json
+.firebase/

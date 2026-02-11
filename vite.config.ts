@@ -28,6 +28,18 @@ export default defineConfig({
       input: {
         main: path.resolve(import.meta.dirname, "client/index.html"),
       },
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("firebase")) return "vendor-firebase";
+            if (id.includes("recharts") || id.includes("d3-")) return "vendor-charts";
+            if (id.includes("@trpc") || id.includes("@tanstack")) return "vendor-query";
+            if (id.includes("react-dom")) return "vendor-react";
+            if (id.includes("@radix-ui") || id.includes("lucide-react")) return "vendor-ui";
+            if (id.includes("mermaid") || id.includes("cytoscape") || id.includes("katex")) return "vendor-viz";
+          }
+        },
+      },
     },
     copyPublicDir: true,
   },

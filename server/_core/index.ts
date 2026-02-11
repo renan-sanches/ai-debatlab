@@ -13,12 +13,18 @@ import streamingRoutes from "../streamingRoutes";
 import { apiLimiter, streamingLimiter, authLimiter } from "../middleware/rateLimit";
 import { getDb } from "../db";
 
+// Build ID is set at build time; helps verify which version is deployed
+const BUILD_ID = process.env.BUILD_ID || "local";
+const BUILD_TIME = process.env.BUILD_TIME || new Date().toISOString();
+
 // Log startup environment for debugging
+console.log("[Startup] BUILD_ID:", BUILD_ID);
+console.log("[Startup] BUILD_TIME:", BUILD_TIME);
 console.log("[Startup] NODE_ENV:", process.env.NODE_ENV);
 console.log("[Startup] PORT:", process.env.PORT);
 console.log("[Startup] CWD:", process.cwd());
 console.log("[Startup] DATABASE_URL:", process.env.DATABASE_URL ? "***SET***" : "NOT SET");
-console.log("[Startup] SUPABASE_URL:", process.env.SUPABASE_URL ? "***SET***" : "NOT SET");
+console.log("[Startup] FIREBASE_PROJECT_ID:", process.env.FIREBASE_PROJECT_ID ? "***SET***" : "NOT SET");
 
 // Initialize Sentry error tracking
 if (process.env.SENTRY_DSN) {
@@ -55,7 +61,10 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
-  
+
+  // Trust proxy (required for Cloud Run / load balancers that set X-Forwarded-For)
+  app.set("trust proxy", 1);
+
   // Sentry request handler (must be first middleware)
   if (process.env.SENTRY_DSN) {
     Sentry.setupExpressErrorHandler(app);
@@ -77,10 +86,12 @@ async function startServer() {
     try {
       const db = await getDb();
       const dbStatus = db ? "connected" : "not_configured";
-      
+
       res.json({
         status: db ? "healthy" : "degraded",
         database: dbStatus,
+        buildId: BUILD_ID,
+        buildTime: BUILD_TIME,
         timestamp: new Date().toISOString(),
         environment: process.env.NODE_ENV || "development",
       });

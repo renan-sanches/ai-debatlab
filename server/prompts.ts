@@ -5,6 +5,7 @@ export interface PromptContext {
   previousResponses: string;
   roundNumber: number;
   moderatorSynthesis?: string;
+  debateHistory?: string;
   modelName: string;
   modelLens: string;
   allParticipantResponses?: string;
@@ -24,13 +25,17 @@ export function buildStandardParticipantPrompt(ctx: PromptContext): string {
     ? `\n[The user has also shared an image for context. Consider it in your response.]`
     : "";
 
+  const historyContext = ctx.debateHistory
+    ? `\n--- CONVERSATION HISTORY ---\n${ctx.debateHistory}\n--- END HISTORY ---\n`
+    : "";
+
   // Include actual PDF content if available
   const pdfSection = ctx.pdfContent
     ? `\n\n--- ATTACHED PDF DOCUMENT CONTENT ---\nThe user attached a PDF document. Here is the extracted text content from that PDF:\n\n${ctx.pdfContent}\n--- END OF PDF CONTENT ---\n`
     : "";
 
   return `You're in a casual roundtable discussion with other AIs. Be yourself, speak plainly, and give actually useful answers.
-
+${historyContext}
 THE QUESTION: ${ctx.userQuestion}${imageContext}
 ${pdfSection}
 WHAT OTHERS SAID: ${ctx.previousResponses || "You're up first!"}
@@ -66,13 +71,17 @@ export function buildDevilsAdvocatePrompt(ctx: PromptContext): string {
     ? `\n[The user has also shared an image for context.]`
     : "";
 
+  const historyContext = ctx.debateHistory
+    ? `\n--- CONVERSATION HISTORY ---\n${ctx.debateHistory}\n--- END HISTORY ---\n`
+    : "";
+
   // Include actual PDF content if available
   const pdfSection = ctx.pdfContent
     ? `\n\n--- ATTACHED PDF DOCUMENT CONTENT ---\nThe user attached a PDF document. Here is the extracted text content from that PDF:\n\n${ctx.pdfContent}\n--- END OF PDF CONTENT ---\n`
     : "";
 
   return `You're the devil's advocate in this discussion. Your job: poke holes, challenge assumptions, and argue the other side.
-
+${historyContext}
 THE QUESTION: ${ctx.userQuestion}${imageContext}
 ${pdfSection}
 WHAT OTHERS SAID: ${ctx.previousResponses || "You're up first - set a contrarian tone!"}

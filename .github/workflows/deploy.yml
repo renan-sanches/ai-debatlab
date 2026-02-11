@@ -15,7 +15,7 @@ jobs:
       
       - uses: pnpm/action-setup@v2
         with:
-          version: 9
+          version: 10
       
       - uses: actions/setup-node@v4
         with:
@@ -40,7 +40,7 @@ jobs:
       
       - uses: pnpm/action-setup@v2
         with:
-          version: 9
+          version: 10
       
       - uses: actions/setup-node@v4
         with:
@@ -53,19 +53,44 @@ jobs:
       - name: Run tests
         run: pnpm test
 
-  # Deploy to Railway (only on main branch push)
+  # Deploy to Google Cloud Run (only on main branch push)
   deploy:
     runs-on: ubuntu-latest
     needs: [check, test]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     steps:
       - uses: actions/checkout@v4
-      
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-      
-      - name: Deploy to Railway
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-        run: railway up --service ai-debatelab
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Verify deployment target
+        run: |
+          echo "GCP Project: $(gcloud config get-value project)"
+          echo "Commit SHA: ${{ github.sha }}"
+          echo "Secrets check:"
+          echo "  DATABASE_URL: ${{ secrets.DATABASE_URL != '' && 'SET' || 'EMPTY' }}"
+          echo "  FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID != '' && 'SET' || 'EMPTY' }}"
+          echo "  FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL != '' && 'SET' || 'EMPTY' }}"
+          echo "  FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY != '' && 'SET' || 'EMPTY' }}"
+          echo "  OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY != '' && 'SET' || 'EMPTY' }}"
+          echo "  VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY != '' && 'SET' || 'EMPTY' }}"
+
+      - name: Trigger Cloud Build
+        run: |
+          # Base64-encode FIREBASE_PRIVATE_KEY to preserve newlines through substitutions
+          ENCODED_FB_KEY=$(echo -n '${{ secrets.FIREBASE_PRIVATE_KEY }}' | base64 -w 0)
+          gcloud builds submit --config cloudbuild.yaml \
+            --substitutions=COMMIT_SHA="${{ github.sha }}",_DATABASE_URL="${{ secrets.DATABASE_URL }}",_VITE_FIREBASE_API_KEY="${{ secrets.VITE_FIREBASE_API_KEY }}",_VITE_FIREBASE_AUTH_DOMAIN="${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}",_VITE_FIREBASE_PROJECT_ID="${{ secrets.VITE_FIREBASE_PROJECT_ID }}",_VITE_FIREBASE_STORAGE_BUCKET="${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}",_VITE_FIREBASE_MESSAGING_SENDER_ID="${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}",_VITE_FIREBASE_APP_ID="${{ secrets.VITE_FIREBASE_APP_ID }}",_FIREBASE_PROJECT_ID="${{ secrets.FIREBASE_PROJECT_ID }}",_FIREBASE_CLIENT_EMAIL="${{ secrets.FIREBASE_CLIENT_EMAIL }}",_FIREBASE_PRIVATE_KEY="$ENCODED_FB_KEY",_OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}",_ENCRYPTION_KEY="${{ secrets.ENCRYPTION_KEY }}",_JWT_SECRET="${{ secrets.JWT_SECRET }}"
+
+      - name: Verify Cloud Run deployment
+        run: |
+          echo "Checking Cloud Run service status..."
+          gcloud run services describe ai-debatelab --region=us-central1 --format='value(status.url)'
+          gcloud run revisions list --service=ai-debatelab --region=us-central1 --limit=3
 

@@ -18,8 +18,18 @@ import {
   Plus,
   Loader2,
   Search,
-  History as HistoryIcon,
+  History,
   Sparkles,
+  Compass,
+  Clock,
+  Flame,
+  Zap,
+  Trophy,
+  Handshake,
+  Play,
+  FileText,
+  Download,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { AI_MODELS } from "../../../shared/models";
@@ -37,47 +47,7 @@ function getModelEmoji(modelId: string): { emoji: string; bgColor: string; borde
   return { emoji: '🤖', bgColor: 'bg-gray-100 dark:bg-gray-800', borderColor: 'border-gray-500', shadowColor: 'shadow-[0_0_15px_rgba(107,114,128,0.25)]' };
 }
 
-// Helper function to estimate duration from debate data
-function estimateDuration(debate: any): string {
-  // If we have actual duration data, use it
-  if (debate.duration) {
-    const minutes = Math.floor(debate.duration / 60);
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
-
-    if (hours > 0) {
-      return `${hours}h ${remainingMinutes}m`;
-    }
-    return `${minutes}m`;
-  }
-
-  // Otherwise estimate based on message count or created date
-  // This is placeholder logic - adjust based on your actual data
-  const estimatedMinutes = Math.floor(Math.random() * 120) + 30; // Random 30-150 min
-  const hours = Math.floor(estimatedMinutes / 60);
-  const remainingMinutes = estimatedMinutes % 60;
-
-  if (hours > 0) {
-    return `${hours}h ${remainingMinutes}m`;
-  }
-  return `${estimatedMinutes}m`;
-}
-
-// Helper function to estimate intensity
-function estimateIntensity(debate: any): { level: string; icon: string; color: string } {
-  // This is placeholder logic - you can adjust based on actual metrics
-  // like message count, word count, sentiment analysis, etc.
-  const intensityLevels = [
-    { level: "High Intensity", icon: "local_fire_department", color: "text-red-400" },
-    { level: "Med Intensity", icon: "bolt", color: "text-yellow-500" },
-    { level: "Extreme Intensity", icon: "local_fire_department", color: "text-orange-500" },
-  ];
-
-  // Random for now - replace with actual logic
-  return intensityLevels[Math.floor(Math.random() * intensityLevels.length)];
-}
-
-// Helper function to determine winner/consensus
+// Helper function to determine winner/consensus from actual debate data
 function getDebateOutcome(debate: any): {
   type: 'winner' | 'consensus' | null;
   model?: string;
@@ -85,17 +55,15 @@ function getDebateOutcome(debate: any): {
   borderColor: string;
   iconColor: string;
 } {
-  // This is placeholder logic - adjust based on your actual results data
   if (debate.status !== 'completed') {
     return { type: null, borderColor: '', iconColor: '' };
   }
 
-  // Check if we have actual winner/consensus data
   if (debate.winner) {
     return {
       type: 'winner',
       model: debate.winner,
-      summary: debate.winningSummary || "Compelling arguments based on data-driven insights and logical reasoning.",
+      summary: debate.winningSummary,
       borderColor: 'border-yellow-500',
       iconColor: 'text-yellow-500',
     };
@@ -104,42 +72,45 @@ function getDebateOutcome(debate: any): {
   if (debate.consensus) {
     return {
       type: 'consensus',
-      summary: debate.consensusSummary || "Both models reached agreement on key foundational principles.",
+      summary: debate.consensusSummary,
       borderColor: 'border-blue-400',
       iconColor: 'text-blue-400',
     };
   }
 
-  // Fallback - randomly assign for demonstration
-  const hasWinner = Math.random() > 0.4;
+  // No result data available - show neutral state
+  return {
+    type: null,
+    borderColor: 'border-slate-300',
+    iconColor: 'text-slate-400',
+  };
+}
 
-  if (hasWinner) {
-    const participantModels = debate.participantModels as string[];
-    const winnerModel = participantModels[Math.floor(Math.random() * participantModels.length)];
-    const model = AI_MODELS.find(m => m.id === winnerModel);
-
-    return {
-      type: 'winner',
-      model: model?.name || winnerModel,
-      summary: "Compelling arguments based on data-driven insights and logical reasoning.",
-      borderColor: Math.random() > 0.5 ? 'border-yellow-500' : 'border-cyan-500',
-      iconColor: Math.random() > 0.5 ? 'text-yellow-500' : 'text-cyan-500',
-    };
+// Helper function to get best available summary for executive summary section
+function getExecutiveSummary(debate: any): string {
+  // Priority 1: Consensus summary if consensus reached
+  if (debate.consensus && debate.consensusSummary) {
+    return debate.consensusSummary;
   }
 
-  return {
-    type: 'consensus',
-    summary: "Both models reached agreement on key foundational principles.",
-    borderColor: 'border-blue-400',
-    iconColor: 'text-blue-400',
-  };
+  // Priority 2: Winning summary if winner exists
+  if (debate.winner && debate.winningSummary) {
+    return debate.winningSummary;
+  }
+
+  // Priority 3: Moderator synthesis from first round
+  if (debate.rounds?.[0]?.moderatorSynthesis) {
+    return debate.rounds[0].moderatorSynthesis;
+  }
+
+  // Fallback: Use question
+  return debate.question;
 }
 
 // Skeleton Loading Card Component
 function SkeletonCard() {
   return (
     <div className="bg-white dark:bg-card-dark rounded-2xl p-6 border border-gray-200 dark:border-card-border-dark shadow-card">
-      {/* Header Skeleton */}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
         <div className="flex-1">
           <div className="flex flex-wrap items-center gap-3 mb-2">
@@ -151,13 +122,11 @@ function SkeletonCard() {
         </div>
       </div>
 
-      {/* Participants Skeleton */}
-      <div className="flex items-center justify-center gap-4 mb-6 py-5 bg-gray-50 dark:bg-gray-800/30 rounded-xl border border-gray-100 dark:border-gray-800">
-        <div className="w-14 h-14 rounded-full bg-gray-200 dark:bg-gray-700 shimmer" />
-        <div className="w-14 h-14 rounded-full bg-gray-200 dark:bg-gray-700 shimmer" />
+      <div className="flex items-center justify-center gap-4 md:gap-6 mb-6 py-6 bg-gray-50 dark:bg-gray-800/30 rounded-xl border border-gray-100 dark:border-gray-800">
+        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gray-200 dark:bg-gray-700 shimmer" />
+        <div className="w-16 h-16 md:w-20 md:h-20 rounded-full bg-gray-200 dark:bg-gray-700 shimmer" />
       </div>
 
-      {/* Summary Skeleton */}
       <div className="mb-6 px-1">
         <div className="h-3 w-32 bg-gray-200 dark:bg-gray-700 rounded shimmer mb-2" />
         <div className="space-y-2">
@@ -166,7 +135,6 @@ function SkeletonCard() {
         </div>
       </div>
 
-      {/* Actions Skeleton */}
       <div className="flex items-center gap-3 border-t border-gray-100 dark:border-gray-800 pt-5">
         <div className="flex-1 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg shimmer" />
         <div className="w-12 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg shimmer" />
@@ -196,16 +164,6 @@ export default function Library() {
     },
   });
 
-  const endDebate = trpc.results.endDebate.useMutation({
-    onSuccess: () => {
-      toast.success("Debate ended successfully");
-      refetch();
-    },
-    onError: (error) => {
-      toast.error("Failed to end debate: " + error.message);
-    },
-  });
-
   const filteredDebates = debates?.filter(
     (debate) =>
       debate.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -227,31 +185,28 @@ export default function Library() {
 
   return (
     <DashboardLayout>
-      <div className="flex-1 overflow-y-auto p-6 md:p-8 lg:px-12 lg:py-10">
+      <div className="flex-1 overflow-y-auto p-6 md:p-8 lg:px-12 lg:py-10 scroll-smooth">
         <div className="max-w-7xl mx-auto space-y-10">
+
           {/* Header Section */}
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div className="space-y-4">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 text-xs font-bold tracking-wider uppercase">
-                <span className="material-icons-round text-sm">history</span> History Archives
+                <History className="w-4 h-4" /> History Archives
               </div>
               <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-slate-900 dark:text-white">
-                Your Debate{" "}
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-primary">
-                  Journey
-                </span>
+                Your Debate <span className="gradient-text">Journey</span>
               </h1>
-              <p className="text-slate-600 dark:text-slate-400 text-lg max-w-2xl leading-relaxed">
+              <p className="text-text-light-secondary dark:text-text-dark-secondary text-lg max-w-2xl leading-relaxed">
                 Review detailed logs of past dialectics. Analyze winning
                 arguments, consensus points, and AI model performance metrics.
               </p>
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Search Input */}
               <div className="relative group hidden lg:block">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <span className="material-icons-round text-gray-400 group-focus-within:text-primary transition-colors">search</span>
+                  <Search className="w-4 h-4 text-gray-400 group-focus-within:text-primary transition-colors" />
                 </div>
                 <input
                   type="text"
@@ -266,7 +221,7 @@ export default function Library() {
                 onClick={() => navigate("/")}
                 className="bg-primary hover:bg-primary-hover text-white font-semibold py-3 px-6 rounded-xl shadow-glow transition-all flex items-center gap-2 group whitespace-nowrap h-12"
               >
-                <span className="material-icons-round group-hover:rotate-12 transition-transform">explore</span>
+                <Compass className="w-5 h-5 group-hover:rotate-12 transition-transform" />
                 New Exploration
               </Button>
             </div>
@@ -321,9 +276,6 @@ export default function Library() {
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               {filteredDebates.map((debate) => {
                 const participantModels = debate.participantModels as string[];
-                const tags = debate.tags as string[] | null;
-                const duration = estimateDuration(debate);
-                const intensity = estimateIntensity(debate);
                 const outcome = getDebateOutcome(debate);
 
                 return (
@@ -345,10 +297,7 @@ export default function Library() {
                             {debate.status}
                           </span>
                           <span className="text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1">
-                            <span className="material-icons-round text-sm">schedule</span> {duration}
-                          </span>
-                          <span className={`text-xs text-gray-500 dark:text-gray-400 font-medium flex items-center gap-1`}>
-                            <span className={`material-icons-round text-sm ${intensity.color}`}>{intensity.icon}</span> {intensity.level}
+                            <Clock className="w-3.5 h-3.5" /> {participantModels.length} models
                           </span>
                         </div>
                         <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight line-clamp-2">
@@ -366,7 +315,7 @@ export default function Library() {
                     </div>
 
                     {/* Participants Display */}
-                    <div className="flex items-center justify-center gap-6 mb-6 py-5 bg-gray-50 dark:bg-gray-800/30 rounded-xl border border-gray-100 dark:border-gray-800 relative overflow-hidden group-hover:border-blue-500/20 transition-colors">
+                    <div className="flex items-center justify-center gap-4 md:gap-6 mb-6 py-6 bg-gray-50 dark:bg-gray-800/30 rounded-xl border border-gray-100 dark:border-gray-800 relative overflow-hidden group-hover:border-blue-500/20 transition-colors">
                       <div
                         className="absolute inset-0 opacity-[0.03] dark:opacity-[0.05]"
                         style={{
@@ -375,9 +324,13 @@ export default function Library() {
                           backgroundSize: "16px 16px",
                         }}
                       />
-                      {participantModels.slice(0, participantModels.length === 2 ? 1 : 2).map((modelId, index) => {
+                      {participantModels.slice(0, 2).map((modelId, index) => {
                         const model = AI_MODELS.find((m) => m.id === modelId);
                         const modelEmoji = getModelEmoji(modelId);
+                        const borderColor = index === 0 ? "border-purple-500" : "border-emerald-500";
+                        const shadowColor = index === 0
+                          ? "shadow-[0_0_15px_rgba(168,85,247,0.25)] ring-4 ring-purple-500/10"
+                          : "shadow-[0_0_15px_rgba(16,185,129,0.25)] ring-4 ring-emerald-500/10";
 
                         return (
                           <div
@@ -385,11 +338,7 @@ export default function Library() {
                             className="flex flex-col items-center gap-2 z-10 relative"
                           >
                             <div
-                              className={`w-14 h-14 rounded-full ${modelEmoji.bgColor} border-2 ${
-                                index === 0
-                                  ? "border-purple-500 shadow-[0_0_15px_rgba(168,85,247,0.25)] ring-4 ring-purple-500/10"
-                                  : "border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.25)] ring-4 ring-emerald-500/10"
-                              } flex items-center justify-center text-2xl`}
+                              className={`w-16 h-16 md:w-20 md:h-20 rounded-full ${modelEmoji.bgColor} border-2 ${borderColor} ${shadowColor} flex items-center justify-center text-3xl`}
                             >
                               {modelEmoji.emoji}
                             </div>
@@ -400,51 +349,12 @@ export default function Library() {
                         );
                       })}
 
-                      {participantModels.length === 2 && (
+                      {participantModels.length >= 2 && (
                         <div className="flex flex-col items-center z-10 mx-2">
                           <span className="text-3xl font-black italic text-transparent bg-clip-text bg-gradient-to-b from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-800 tracking-widest drop-shadow-sm">
                             VS
                           </span>
                         </div>
-                      )}
-
-                      {participantModels.length === 2 ? (
-                        <div className="flex flex-col items-center gap-2 z-10 relative">
-                          {(() => {
-                            const modelId = participantModels[1];
-                            const model = AI_MODELS.find((m) => m.id === modelId);
-                            const modelEmoji = getModelEmoji(modelId);
-
-                            return (
-                              <>
-                                <div className={`w-14 h-14 rounded-full ${modelEmoji.bgColor} border-2 border-emerald-500 flex items-center justify-center text-2xl shadow-[0_0_15px_rgba(16,185,129,0.25)] ring-4 ring-emerald-500/10`}>
-                                  {modelEmoji.emoji}
-                                </div>
-                                <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
-                                  {model?.name?.split(" ")[0] || modelId}
-                                </span>
-                              </>
-                            );
-                          })()}
-                        </div>
-                      ) : participantModels.length > 2 && (
-                        <>
-                          <div className="flex flex-col items-center z-10 mx-2">
-                            <span className="text-2xl font-black italic text-transparent bg-clip-text bg-gradient-to-b from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-800 tracking-widest drop-shadow-sm">
-                              VS
-                            </span>
-                          </div>
-                          <div className="flex flex-col items-center gap-2 z-10 relative">
-                            <div className="w-14 h-14 rounded-full bg-gray-100 dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-700 flex items-center justify-center">
-                              <span className="text-sm font-bold text-gray-500">
-                                +{participantModels.length - 2}
-                              </span>
-                            </div>
-                            <span className="text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wide">
-                              More
-                            </span>
-                          </div>
-                        </>
                       )}
                     </div>
 
@@ -454,7 +364,7 @@ export default function Library() {
                         Executive Summary
                       </h4>
                       <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed line-clamp-3">
-                        {debate.question}
+                        {getExecutiveSummary(debate)}
                       </p>
                     </div>
 
@@ -463,9 +373,11 @@ export default function Library() {
                       <div className={`mt-auto mb-6 p-4 rounded-xl bg-slate-50 dark:bg-[#1A2333] border-l-4 ${outcome.borderColor} relative shadow-sm`}>
                         <div className="flex items-start gap-3">
                           <div className={`p-1.5 ${outcome.iconColor.replace('text-', 'bg-')}/10 rounded-full shrink-0`}>
-                            <span className={`material-icons-round ${outcome.iconColor} text-lg`}>
-                              {outcome.type === 'winner' ? 'emoji_events' : 'handshake'}
-                            </span>
+                            {outcome.type === 'winner' ? (
+                              <Trophy className={`w-4 h-4 ${outcome.iconColor}`} />
+                            ) : (
+                              <Handshake className={`w-4 h-4 ${outcome.iconColor}`} />
+                            )}
                           </div>
                           <div>
                             <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-1">
@@ -486,38 +398,31 @@ export default function Library() {
                     <div className="flex items-center gap-3 border-t border-gray-100 dark:border-gray-800 pt-5 mt-auto">
                       {debate.status === "active" ? (
                         <button
-                          className="flex-1 bg-primary hover:bg-primary-hover text-white font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all shadow-glow"
+                          className="flex-1 bg-primary hover:bg-primary-hover text-white font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all shadow-glow active:scale-95 touch-manipulation min-h-[44px]"
                           onClick={() =>
                             navigate(`/debate/${debate.id}?autostart=true`)
                           }
                         >
-                          <span className="material-icons-round text-lg">play_arrow</span>
+                          <Play className="w-5 h-5" />
                           <span className="text-sm">Resume Debate</span>
                         </button>
                       ) : (
                         <button
-                          className="flex-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-neon-blue border border-cyan-500/20 font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all shadow-neon-blue"
+                          className="flex-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-neon-blue border border-cyan-500/20 font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-all shadow-neon-blue active:scale-95 touch-manipulation min-h-[44px]"
                           onClick={() => navigate(`/debate/${debate.id}`)}
                         >
-                          <span className="material-icons-round text-lg">description</span>
+                          <FileText className="w-5 h-5" />
                           <span className="text-sm">Review Transcript</span>
                         </button>
                       )}
 
-                      <button
-                        className="w-12 h-10 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-primary hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-                        title="Download"
-                      >
-                        <span className="material-icons-round text-lg">download</span>
-                      </button>
-
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <button
-                            className="w-12 h-10 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            className="w-12 h-10 flex items-center justify-center rounded-lg border border-gray-200 dark:border-gray-700 text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors active:scale-95 touch-manipulation min-h-[44px]"
                             title="Delete"
                           >
-                            <span className="material-icons-round text-lg">delete</span>
+                            <Trash2 className="w-5 h-5" />
                           </button>
                         </AlertDialogTrigger>
                         <AlertDialogContent className="glass-card rounded-2xl p-6">
@@ -553,14 +458,6 @@ export default function Library() {
             </div>
           )}
 
-          {/* Load More */}
-          {filteredDebates && filteredDebates.length > 0 && (
-            <div className="flex justify-center pt-8 pb-8">
-              <button className="text-sm font-semibold text-gray-500 dark:text-gray-400 hover:text-neon-blue dark:hover:text-neon-blue transition-colors flex items-center gap-2 px-6 py-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
-                <span className="material-icons-round">history</span> Load older debates
-              </button>
-            </div>
-          )}
         </div>
       </div>
     </DashboardLayout>

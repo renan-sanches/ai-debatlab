@@ -8,8 +8,6 @@ import * as db from "../db";
 import { AI_MODELS, getModelById } from "../../shared/models";
 import { invokeLLMWithModel } from "../llmHelper";
 import {
-  buildStandardParticipantPrompt,
-  buildDevilsAdvocatePrompt,
   buildVotingPrompt,
   buildModeratorPrompt,
   buildDiscourseAnalyticsPrompt,
@@ -19,6 +17,8 @@ import {
 import { extractPdfForPrompt } from "../pdfExtractor";
 import { assignRandomAvatars } from "../config/avatarConfig";
 import { evaluateResponse } from "../services/scoringService";
+import { asyncPool } from "../utils";
+import { prepareDebatePrompt, getUserApiKeyForModel } from "../services/debateService";
 
 /**
  * Generate a short, descriptive title for a debate question
@@ -58,12 +58,13 @@ export const debateRouter = router({
   // Create a new debate
   create: protectedProcedure
     .input(z.object({
-      question: z.string().min(1),
-      participantModels: z.array(z.string()).min(2),
+      question: z.string().min(1).max(10000),
+      participantModels: z.array(z.string()).min(2).max(20),
       moderatorModel: z.string(),
       devilsAdvocateEnabled: z.boolean().default(false),
       devilsAdvocateModel: z.string().nullable().default(null),
       votingEnabled: z.boolean().default(false),
+      isBlindMode: z.boolean().default(false),
       title: z.string().optional(),
       tags: z.array(z.string()).optional(),
       imageUrl: z.string().optional(),
@@ -84,6 +85,7 @@ export const debateRouter = router({
         devilsAdvocateEnabled: input.devilsAdvocateEnabled,
         devilsAdvocateModel: input.devilsAdvocateModel,
         votingEnabled: input.votingEnabled,
+        isBlindMode: input.isBlindMode,
         title,
         tags: input.tags || [],
         imageUrl: input.imageUrl,
@@ -197,82 +199,23 @@ export const debateRouter = router({
         throw new Error("Debate not found");
       }
 
-      const model = getModelById(input.modelId);
-      if (!model) throw new Error("Model not found");
-
       // Get existing responses in this round
       const existingResponses = await db.getResponsesByRoundId(input.roundId);
-      const previousResponses = formatResponsesForContext(
-        existingResponses.map(r => ({
-          modelName: r.modelName,
-          content: r.content,
-          isDevilsAdvocate: r.isDevilsAdvocate,
-        }))
-      );
 
-      // Get round info
-      const rounds = await db.getRoundsByDebateId(input.debateId);
-      const currentRound = rounds.find(r => r.id === input.roundId);
-      const roundNumber = currentRound?.roundNumber || 1;
-
-      // Get previous moderator synthesis if round > 1
-      let moderatorSynthesis: string | undefined;
-      if (roundNumber > 1) {
-        const prevRound = rounds.find(r => r.roundNumber === roundNumber - 1);
-        moderatorSynthesis = prevRound?.moderatorSynthesis || undefined;
-      }
-
-      // Determine if this model is the devil's advocate
-      const isDevilsAdvocate = debate.devilsAdvocateEnabled && debate.devilsAdvocateModel === input.modelId;
-
-      // Extract PDF content if available
-      let pdfContent: string | undefined;
-      if (debate.pdfUrl) {
-        try {
-          pdfContent = await extractPdfForPrompt(debate.pdfUrl);
-          console.log(`[PDF] Extracted ${pdfContent.length} chars from PDF for debate ${input.debateId}`);
-        } catch (error) {
-          console.error(`[PDF] Failed to extract PDF content:`, error);
-        }
-      }
-
-      // Build prompt
-      const question = currentRound?.followUpQuestion || debate.question;
-      const promptContext = {
-        userQuestion: question,
-        previousResponses,
-        roundNumber,
-        moderatorSynthesis,
-        modelName: model.name,
-        modelLens: model.lens,
-        imageUrl: debate.imageUrl || undefined,
-        pdfUrl: debate.pdfUrl || undefined,
-        pdfContent,
-      };
-
-      const prompt = isDevilsAdvocate
-        ? buildDevilsAdvocatePrompt(promptContext)
-        : buildStandardParticipantPrompt(promptContext);
+      // Prepare prompt using shared service
+      const { prompt, isDevilsAdvocate, model, promptContext } = await prepareDebatePrompt({
+        debate,
+        roundId: input.roundId,
+        modelId: input.modelId,
+        existingResponses,
+      });
 
       // Get user's API key if they want to use their own billing
-      let userApiKey: string | null = null;
-      let apiProvider: "openrouter" | "anthropic" | "openai" | "google" | null = null;
-
-      if (input.useUserApiKey) {
-        // Try OpenRouter first (most flexible)
-        const openRouterKey = await db.getUserApiKeyByProvider(ctx.user.id, "openrouter");
-        if (openRouterKey) {
-          userApiKey = openRouterKey.apiKey;
-          apiProvider = "openrouter";
-        } else {
-          // Try provider-specific key
-          const providerKey = await db.getUserApiKeyByProvider(ctx.user.id, model.provider as "anthropic" | "openai" | "google");
-          if (providerKey) {
-            userApiKey = providerKey.apiKey;
-            apiProvider = model.provider as "anthropic" | "openai" | "google";
-          }
-        }
-      }
+      const { userApiKey, apiProvider } = await getUserApiKeyForModel(
+        ctx.user.id,
+        model,
+        input.useUserApiKey || false
+      );
 
       // Call LLM
       const response = await invokeLLMWithModel({
@@ -300,7 +243,7 @@ export const debateRouter = router({
 
       // Trigger async scoring
       if (model) {
-        evaluateResponse(responseId, content, question, model.name).catch(e =>
+        evaluateResponse(responseId, content, promptContext.userQuestion, model.name).catch(e =>
           console.error("[Scoring Trigger Failed]", e)
         );
       }
@@ -345,12 +288,18 @@ export const debateRouter = router({
       const rounds = await db.getRoundsByDebateId(input.debateId);
       const currentRound = rounds.find(r => r.id === input.roundId);
       const question = currentRound?.followUpQuestion || debate.question;
+      // Build a map of all participant models for matching
+      const participantModelsMap = debate.participantModels.map(id => {
+        const m = getModelById(id);
+        return { id, name: m?.name || id, model: m };
+      });
 
-      const votes = [];
+      // Pre-fetch user keys if needed, to avoid race conditions or repeated DB calls in the loop
+      const userKeys = input.useUserApiKey ? await db.getUserApiKeys(ctx.user.id) : [];
 
-      for (const modelId of debate.participantModels) {
+      const processVote = async (modelId: string) => {
         const model = getModelById(modelId);
-        if (!model) continue;
+        if (!model) return null;
 
         const prompt = buildVotingPrompt({
           userQuestion: question,
@@ -366,12 +315,12 @@ export const debateRouter = router({
         let apiProvider: "openrouter" | "anthropic" | "openai" | "google" | null = null;
 
         if (input.useUserApiKey) {
-          const openRouterKey = await db.getUserApiKeyByProvider(ctx.user.id, "openrouter");
+          const openRouterKey = userKeys.find((k: { provider: string }) => k.provider === "openrouter");
           if (openRouterKey) {
             userApiKey = openRouterKey.apiKey;
             apiProvider = "openrouter";
           } else {
-            const providerKey = await db.getUserApiKeyByProvider(ctx.user.id, model.provider as "anthropic" | "openai" | "google");
+            const providerKey = userKeys.find((k: { provider: string }) => k.provider === model.provider);
             if (providerKey) {
               userApiKey = providerKey.apiKey;
               apiProvider = model.provider as "anthropic" | "openai" | "google";
@@ -388,12 +337,6 @@ export const debateRouter = router({
 
         const rawVoteContent = response.choices[0]?.message?.content;
         const voteContent = typeof rawVoteContent === 'string' ? rawVoteContent : "";
-
-        // Build a map of all participant models for matching
-        const participantModelsMap = debate.participantModels.map(id => {
-          const m = getModelById(id);
-          return { id, name: m?.name || id, model: m };
-        });
 
         // Parse vote from response - handle multiple formats
         const votePatterns = [
@@ -484,23 +427,29 @@ export const debateRouter = router({
           }
 
           if (votedForParticipant && votedForParticipant.id !== modelId) {
-            await db.createVote({
+            // Return vote object for batch insertion
+            return {
               roundId: input.roundId,
               voterModelId: modelId,
               votedForModelId: votedForParticipant.id,
               reason: reason || voteContent.slice(0, 200),
-            });
-
-            votes.push({
-              voterModelId: modelId,
-              votedForModelId: votedForParticipant.id,
-              reason: reason || voteContent.slice(0, 200),
-            });
+            };
           }
         }
+        return null;
+      };
+
+      const poolResults = await asyncPool(5, debate.participantModels, processVote);
+
+      const votesToInsert = poolResults
+        .filter((r): r is PromiseFulfilledResult<any> => r.status === "fulfilled" && r.value != null)
+        .map(r => r.value);
+
+      if (votesToInsert.length > 0) {
+        await db.createVotes(votesToInsert);
       }
 
-      return { votes };
+      return { votes: votesToInsert };
     }),
 
   // Generate moderator synthesis
@@ -603,7 +552,7 @@ export const debateRouter = router({
           apiProvider,
         }),
         invokeLLMWithModel({
-          model: "openai-gpt-4o-mini", // Use a fast, smart model for analytics JSON
+          model: "openai/gpt-4o-mini", // Use a fast, smart model for analytics JSON
           messages: [{ role: "user", content: analyticsPrompt }],
           // Use same API key strategy if applicable, or fallback to system
           // For simplicity, we'll try to use the user's key if it works for OpenAI, otherwise system

@@ -1,21 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, Mail, Lock, User, Github, Sparkles, AlertTriangle } from "lucide-react";
+import { auth } from "@/lib/firebase";
+import { trpc } from "@/lib/trpc";
 import {
-  signInWithEmail,
-  signUpWithEmail,
-  signInWithProvider,
-} from "@/lib/supabase";
-import { Loader2, Mail, Lock, User, Github, Sparkles } from "lucide-react";
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile,
+  signInWithRedirect,
+  getRedirectResult,
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  GithubAuthProvider
+} from "firebase/auth";
 
 export default function Login() {
   const [, setLocation] = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  // Check server status
+  const { data: serverStatus, isLoading: isCheckingServer } = trpc.auth.status.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false
+  });
 
   // Sign In form state
   const [signInEmail, setSignInEmail] = useState("");
@@ -27,20 +40,43 @@ export default function Login() {
   const [signUpPassword, setSignUpPassword] = useState("");
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState("");
 
+  // Listen for auth state changes (fallback for redirect flow)
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setLocation("/");
+      }
+    });
+    return () => unsubscribe();
+  }, [setLocation]);
+
+  // Handle OAuth redirect result
+  useEffect(() => {
+    const handleRedirect = async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result) {
+          // User successfully signed in via redirect
+          setLocation("/");
+        }
+      } catch (err: any) {
+        setError(err.message || "An error occurred during sign in");
+      }
+    };
+
+    handleRedirect();
+  }, [setLocation]);
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
 
     try {
-      const { error } = await signInWithEmail(signInEmail, signInPassword);
-      if (error) {
-        setError(error.message);
-      } else {
-        setLocation("/");
-      }
-    } catch (err) {
-      setError("An unexpected error occurred");
+      await signInWithEmailAndPassword(auth, signInEmail, signInPassword);
+      setLocation("/");
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
@@ -64,39 +100,35 @@ export default function Login() {
     }
 
     try {
-      const { error } = await signUpWithEmail(
-        signUpEmail,
-        signUpPassword,
-        signUpName
-      );
-      if (error) {
-        setError(error.message);
-      } else {
-        setMessage("Check your email to confirm your account!");
-        setSignUpName("");
-        setSignUpEmail("");
-        setSignUpPassword("");
-        setSignUpConfirmPassword("");
+      const userCredential = await createUserWithEmailAndPassword(auth, signUpEmail, signUpPassword);
+      if (signUpName) {
+        await updateProfile(userCredential.user, { displayName: signUpName });
       }
-    } catch (err) {
-      setError("An unexpected error occurred");
+      setMessage("Account created! Redirecting...");
+      setTimeout(() => setLocation("/"), 1500);
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleOAuthSignIn = async (provider: "google" | "github") => {
+  const handleOAuthSignIn = async (providerName: "google" | "github") => {
     setIsLoading(true);
     setError(null);
 
     try {
-      const { error } = await signInWithProvider(provider);
-      if (error) {
-        setError(error.message);
-        setIsLoading(false);
+      let provider;
+      if (providerName === "google") {
+        provider = new GoogleAuthProvider();
+      } else {
+        provider = new GithubAuthProvider();
       }
-    } catch (err) {
-      setError("An unexpected error occurred");
+      // Use redirect instead of popup to avoid COOP issues
+      await signInWithRedirect(auth, provider);
+      // User will be redirected, no need to call setLocation here
+    } catch (err: any) {
+      setError(err.message || "An unexpected error occurred");
       setIsLoading(false);
     }
   };
@@ -129,6 +161,21 @@ export default function Login() {
 
           {/* Form Content */}
           <div className="px-8 pb-8">
+            {serverStatus && (!serverStatus.firebaseInitialized || !serverStatus.env.privateKey) && (
+                <div className="mb-6 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-900/30 rounded-xl text-amber-800 dark:text-amber-200 text-sm flex items-start gap-3">
+                  <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <p className="font-semibold">Server Misconfigured</p>
+                    <p className="mt-1 opacity-90">
+                      The server is missing required Firebase credentials.
+                      {!serverStatus.env.projectId && <div>- Missing Project ID</div>}
+                      {!serverStatus.env.clientEmail && <div>- Missing Client Email</div>}
+                      {!serverStatus.env.privateKey && <div>- Missing Private Key</div>}
+                    </p>
+                  </div>
+                </div>
+            )}
+
             <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-2 mb-6 bg-slate-100 dark:bg-slate-900 p-1 rounded-xl">
                 <TabsTrigger

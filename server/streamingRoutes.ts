@@ -5,7 +5,7 @@
 import { Router, Request, Response } from "express";
 import { streamLLMResponse } from "./llmStreaming";
 import * as db from "./db";
-import { authenticateRequest } from "./supabase";
+import { authenticateRequest } from "./auth";
 import {
   prepareDebatePrompt,
   getUserApiKeyForModel,
@@ -22,9 +22,9 @@ router.get("/api/stream/debate/:debateId/response", async (req: Request, res: Re
   const responseOrder = parseInt(req.query.responseOrder as string);
   const useUserApiKey = req.query.useUserApiKey === "true";
 
-  // Authenticate using Supabase (handles dev mode internally)
+  // Authenticate using Firebase (handles dev mode internally)
   const user = await authenticateRequest(req);
-  
+
   if (!user) {
     res.status(401).json({ error: "Unauthorized" });
     return;
@@ -73,6 +73,12 @@ router.get("/api/stream/debate/:debateId/response", async (req: Request, res: Re
   );
 
   let fullContent = "";
+  let clientDisconnected = false;
+
+  // Handle client disconnect - stop writing to response
+  req.on("close", () => {
+    clientDisconnected = true;
+  });
 
   // Stream the response
   await streamLLMResponse(
@@ -85,46 +91,53 @@ router.get("/api/stream/debate/:debateId/response", async (req: Request, res: Re
     {
       onToken: (token) => {
         fullContent += token;
-        // Send token as SSE event
-        res.write(`data: ${JSON.stringify({ type: "token", content: token })}\n\n`);
+        if (!clientDisconnected) {
+          res.write(`data: ${JSON.stringify({ type: "token", content: token })}\n\n`);
+        }
       },
       onComplete: async (text, usage) => {
-        // Save the complete response to database
-        const responseId = await db.createResponse({
-          roundId,
-          debateId,
-          modelId,
-          modelName: model.name,
-          content: text,
-          isDevilsAdvocate,
-          responseOrder,
-        });
+        // Save the complete response to database even if client disconnected
+        try {
+          const responseId = await db.createResponse({
+            roundId,
+            debateId,
+            modelId,
+            modelName: model.name,
+            content: text,
+            isDevilsAdvocate,
+            responseOrder,
+          });
 
-        // Send completion event with usage info
-        res.write(`data: ${JSON.stringify({
-          type: "complete",
-          responseId,
-          modelId,
-          modelName: model.name,
-          content: text,
-          isDevilsAdvocate,
-          responseOrder,
-          usage,
-        })}\n\n`);
-        
-        res.end();
+          if (!clientDisconnected) {
+            // Send completion event with usage info
+            res.write(`data: ${JSON.stringify({
+              type: "complete",
+              responseId,
+              modelId,
+              modelName: model.name,
+              content: text,
+              isDevilsAdvocate,
+              responseOrder,
+              usage,
+            })}\n\n`);
+            res.end();
+          }
+        } catch (dbError) {
+          console.error("[Streaming] Failed to save response to database:", dbError);
+          if (!clientDisconnected) {
+            res.write(`data: ${JSON.stringify({ type: "error", message: "Failed to save response" })}\n\n`);
+            res.end();
+          }
+        }
       },
       onError: (error) => {
-        res.write(`data: ${JSON.stringify({ type: "error", message: error.message })}\n\n`);
-        res.end();
+        if (!clientDisconnected) {
+          res.write(`data: ${JSON.stringify({ type: "error", message: error.message })}\n\n`);
+          res.end();
+        }
       },
     }
   );
-
-  // Handle client disconnect
-  req.on("close", () => {
-    // Client disconnected - cleanup if needed
-  });
 });
 
 export default router;

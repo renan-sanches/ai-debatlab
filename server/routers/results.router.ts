@@ -23,15 +23,30 @@ export const resultsRouter = router({
         throw new Error("Debate not found");
       }
 
+      // Prevent double-ending: if debate already completed, return existing result
+      if (debate.status === "completed") {
+        const existingResult = await db.getDebateResult(input.debateId);
+        if (existingResult) {
+          return {
+            finalAssessment: existingResult.finalAssessment,
+            synthesis: existingResult.synthesis,
+            moderatorTopPick: existingResult.moderatorTopPick,
+            peerVotes: existingResult.peerVotes || {},
+            strongestArguments: existingResult.strongestArguments || [],
+            devilsAdvocateSuccess: existingResult.devilsAdvocateSuccess,
+            pointsAwarded: existingResult.pointsAwarded || {},
+            usage: undefined,
+          };
+        }
+      }
+
       // Get all rounds and their data
-      const rounds = await db.getRoundsByDebateId(input.debateId);
-      const allRoundsData = await Promise.all(
-        rounds.map(async (round) => {
-          const responses = await db.getResponsesByRoundId(round.id);
-          const votes = await db.getVotesByRoundId(round.id);
-          return { round, responses, votes };
-        })
-      );
+      const rounds = await db.getRoundsWithData(input.debateId);
+      const allRoundsData = rounds.map(round => ({
+        round,
+        responses: round.responses,
+        votes: round.votes
+      }));
 
       // Build summary of all rounds
       const allRoundsSummary = allRoundsData.map(({ round, responses, votes }) => {
