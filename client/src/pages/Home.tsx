@@ -15,7 +15,8 @@ import {
   Vote,
   Loader2,
   Settings2,
-  Sparkles
+  Sparkles,
+  EyeOff
 } from "lucide-react";
 import {
   Collapsible,
@@ -37,6 +38,7 @@ export default function Home() {
   const [devilsAdvocateEnabled, setDevilsAdvocateEnabled] = useState(false);
   const [devilsAdvocateModel, setDevilsAdvocateModel] = useState("");
   const [votingEnabled, setVotingEnabled] = useState(true);
+  const [isBlindMode, setIsBlindMode] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -140,6 +142,7 @@ export default function Home() {
       devilsAdvocateEnabled,
       devilsAdvocateModel: devilsAdvocateEnabled ? devilsAdvocateModel : null,
       votingEnabled,
+      isBlindMode,
       imageUrl,
       pdfUrl,
     });
@@ -289,19 +292,38 @@ export default function Home() {
                     </div>
 
                     {/* Voting */}
-                    <div className="md:col-span-2">
-                        <label className="flex items-center p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-[#151b2d] cursor-pointer hover:border-blue-500/50 transition-colors">
+                    <div className="md:col-span-1">
+                        <label className="flex items-center p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-[#151b2d] cursor-pointer hover:border-blue-500/50 transition-colors h-full">
                             <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 mr-4">
                                 <Vote className="w-5 h-5" />
                             </div>
                             <div className="flex-1">
                                 <div className="font-medium text-slate-900 dark:text-white">Enable Voting</div>
-                                <div className="text-xs text-slate-500">Allow participants to vote on arguments during the debate</div>
+                                <div className="text-xs text-slate-500">Allow participants to vote on arguments</div>
                             </div>
                             <input
                               type="checkbox"
                               checked={votingEnabled}
                               onChange={(e) => setVotingEnabled(e.target.checked)}
+                              className="w-5 h-5 accent-blue-500"
+                            />
+                        </label>
+                    </div>
+
+                    {/* Blind Mode */}
+                    <div className="md:col-span-1">
+                        <label className="flex items-center p-4 border border-slate-200 dark:border-slate-800 rounded-xl bg-slate-50 dark:bg-[#151b2d] cursor-pointer hover:border-blue-500/50 transition-colors h-full">
+                            <div className="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 mr-4">
+                                <EyeOff className="w-5 h-5" />
+                            </div>
+                            <div className="flex-1">
+                                <div className="font-medium text-slate-900 dark:text-white">Blind Round</div>
+                                <div className="text-xs text-slate-500">Models won't see each other's responses in the same round</div>
+                            </div>
+                            <input
+                              type="checkbox"
+                              checked={isBlindMode}
+                              onChange={(e) => setIsBlindMode(e.target.checked)}
                               className="w-5 h-5 accent-blue-500"
                             />
                         </label>

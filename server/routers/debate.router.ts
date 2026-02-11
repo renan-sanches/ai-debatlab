@@ -58,12 +58,13 @@ export const debateRouter = router({
   // Create a new debate
   create: protectedProcedure
     .input(z.object({
-      question: z.string().min(1),
-      participantModels: z.array(z.string()).min(2),
+      question: z.string().min(1).max(10000),
+      participantModels: z.array(z.string()).min(2).max(20),
       moderatorModel: z.string(),
       devilsAdvocateEnabled: z.boolean().default(false),
       devilsAdvocateModel: z.string().nullable().default(null),
       votingEnabled: z.boolean().default(false),
+      isBlindMode: z.boolean().default(false),
       title: z.string().optional(),
       tags: z.array(z.string()).optional(),
       imageUrl: z.string().optional(),
@@ -84,6 +85,7 @@ export const debateRouter = router({
         devilsAdvocateEnabled: input.devilsAdvocateEnabled,
         devilsAdvocateModel: input.devilsAdvocateModel,
         votingEnabled: input.votingEnabled,
+        isBlindMode: input.isBlindMode,
         title,
         tags: input.tags || [],
         imageUrl: input.imageUrl,
@@ -550,7 +552,7 @@ export const debateRouter = router({
           apiProvider,
         }),
         invokeLLMWithModel({
-          model: "openai-gpt-4o-mini", // Use a fast, smart model for analytics JSON
+          model: "openai/gpt-4o-mini", // Use a fast, smart model for analytics JSON
           messages: [{ role: "user", content: analyticsPrompt }],
           // Use same API key strategy if applicable, or fallback to system
           // For simplicity, we'll try to use the user's key if it works for OpenAI, otherwise system

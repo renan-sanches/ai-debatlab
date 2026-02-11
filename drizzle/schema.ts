@@ -1,4 +1,4 @@
-import { serial, pgEnum, pgTable, text, timestamp, varchar, boolean, json, integer, real, index } from "drizzle-orm/pg-core";
+import { serial, pgEnum, pgTable, text, timestamp, varchar, boolean, json, integer, real, index, uniqueIndex } from "drizzle-orm/pg-core";
 
 /**
  * Enums for PostgreSQL
@@ -10,7 +10,7 @@ export const providerEnum = pgEnum("provider", ["openrouter", "anthropic", "open
 
 /**
  * Core user table backing auth flow.
- * Note: Uses Supabase Auth user ID as the primary identifier
+ * Uses Firebase Auth user ID as the primary identifier.
  */
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
@@ -32,13 +32,14 @@ export type InsertUser = typeof users.$inferInsert;
  */
 export const debates = pgTable("debates", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
+  userId: integer("user_id").notNull().references(() => users.id),
   question: text("question").notNull(),
   participantModels: json("participant_models").$type<string[]>().notNull(),
   moderatorModel: varchar("moderator_model", { length: 64 }).notNull(),
   devilsAdvocateEnabled: boolean("devils_advocate_enabled").default(false).notNull(),
   devilsAdvocateModel: varchar("devils_advocate_model", { length: 64 }),
   votingEnabled: boolean("voting_enabled").default(false).notNull(),
+  isBlindMode: boolean("is_blind_mode").default(false).notNull(),
   status: debateStatusEnum("status").default("active").notNull(),
   title: varchar("title", { length: 255 }),
   tags: json("tags").$type<string[]>().default([]),
@@ -47,7 +48,10 @@ export const debates = pgTable("debates", {
   modelAvatars: json("model_avatars").$type<Record<string, string>>(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("idx_debates_user_id").on(table.userId),
+  statusIdx: index("idx_debates_status").on(table.status),
+}));
 
 export type Debate = typeof debates.$inferSelect;
 export type InsertDebate = typeof debates.$inferInsert;
@@ -57,7 +61,7 @@ export type InsertDebate = typeof debates.$inferInsert;
  */
 export const rounds = pgTable("rounds", {
   id: serial("id").primaryKey(),
-  debateId: integer("debate_id").notNull(),
+  debateId: integer("debate_id").notNull().references(() => debates.id),
   roundNumber: integer("round_number").notNull(),
   followUpQuestion: text("follow_up_question"),
   moderatorSynthesis: text("moderator_synthesis"),
@@ -75,7 +79,9 @@ export const rounds = pgTable("rounds", {
   }>(),
   status: roundStatusEnum("status").default("in_progress").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  debateIdIdx: index("idx_rounds_debate_id").on(table.debateId),
+}));
 
 export type Round = typeof rounds.$inferSelect;
 export type InsertRound = typeof rounds.$inferInsert;
@@ -85,8 +91,8 @@ export type InsertRound = typeof rounds.$inferInsert;
  */
 export const responses = pgTable("responses", {
   id: serial("id").primaryKey(),
-  roundId: integer("round_id").notNull(),
-  debateId: integer("debate_id").notNull(),
+  roundId: integer("round_id").notNull().references(() => rounds.id),
+  debateId: integer("debate_id").notNull().references(() => debates.id),
   modelId: varchar("model_id", { length: 64 }).notNull(),
   modelName: varchar("model_name", { length: 128 }).notNull(),
   content: text("content").notNull(),
@@ -95,7 +101,10 @@ export const responses = pgTable("responses", {
   score: real("score"), // 0.0 - 10.0
   scoreReasoning: text("score_reasoning"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  roundIdIdx: index("idx_responses_round_id").on(table.roundId),
+  debateIdIdx: index("idx_responses_debate_id").on(table.debateId),
+}));
 
 export type Response = typeof responses.$inferSelect;
 export type InsertResponse = typeof responses.$inferInsert;
@@ -105,12 +114,14 @@ export type InsertResponse = typeof responses.$inferInsert;
  */
 export const votes = pgTable("votes", {
   id: serial("id").primaryKey(),
-  roundId: integer("round_id").notNull(),
+  roundId: integer("round_id").notNull().references(() => rounds.id),
   voterModelId: varchar("voter_model_id", { length: 64 }).notNull(),
   votedForModelId: varchar("voted_for_model_id", { length: 64 }).notNull(),
   reason: text("reason"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  roundIdIdx: index("idx_votes_round_id").on(table.roundId),
+}));
 
 export type Vote = typeof votes.$inferSelect;
 export type InsertVote = typeof votes.$inferInsert;
@@ -120,13 +131,16 @@ export type InsertVote = typeof votes.$inferInsert;
  */
 export const userApiKeys = pgTable("user_api_keys", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
+  userId: integer("user_id").notNull().references(() => users.id),
   provider: providerEnum("provider").notNull(),
   apiKey: text("api_key").notNull(), // Encrypted in application layer
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("idx_user_api_keys_user_id").on(table.userId),
+  userProviderUniq: uniqueIndex("uniq_user_api_keys_user_provider").on(table.userId, table.provider),
+}));
 
 export type UserApiKey = typeof userApiKeys.$inferSelect;
 export type InsertUserApiKey = typeof userApiKeys.$inferInsert;
@@ -136,8 +150,8 @@ export type InsertUserApiKey = typeof userApiKeys.$inferInsert;
  */
 export const debateResults = pgTable("debate_results", {
   id: serial("id").primaryKey(),
-  debateId: integer("debate_id").notNull().unique(),
-  userId: integer("user_id").notNull(),
+  debateId: integer("debate_id").notNull().unique().references(() => debates.id),
+  userId: integer("user_id").notNull().references(() => users.id),
 
   // Final assessment from moderator
   finalAssessment: text("final_assessment"),
@@ -170,7 +184,9 @@ export const debateResults = pgTable("debate_results", {
   topicTags: json("topic_tags").$type<string[]>().default([]),
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("idx_debate_results_user_id").on(table.userId),
+}));
 
 export type DebateResult = typeof debateResults.$inferSelect;
 export type InsertDebateResult = typeof debateResults.$inferInsert;
@@ -180,7 +196,7 @@ export type InsertDebateResult = typeof debateResults.$inferInsert;
  */
 export const modelStats = pgTable("model_stats", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
+  userId: integer("user_id").notNull().references(() => users.id),
   modelId: varchar("model_id", { length: 64 }).notNull(),
 
   // Aggregate stats
@@ -209,11 +225,14 @@ export type InsertModelStat = typeof modelStats.$inferInsert;
  */
 export const userFavoriteModels = pgTable("user_favorite_models", {
   id: serial("id").primaryKey(),
-  userId: integer("user_id").notNull(),
+  userId: integer("user_id").notNull().references(() => users.id),
   openRouterId: varchar("open_router_id", { length: 128 }).notNull(),
   modelName: varchar("model_name", { length: 256 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("idx_user_favorite_models_user_id").on(table.userId),
+  userModelUniq: uniqueIndex("uniq_user_favorite_models_user_model").on(table.userId, table.openRouterId),
+}));
 
 export type UserFavoriteModel = typeof userFavoriteModels.$inferSelect;
 export type InsertUserFavoriteModel = typeof userFavoriteModels.$inferInsert;
