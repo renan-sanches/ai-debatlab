@@ -44,7 +44,7 @@ const trpcClient = trpc.createClient({
       url: "/api/trpc",
       transformer: superjson,
       async headers() {
-        // Get the access token from Supabase for authenticated requests
+        // Get the access token from Firebase for authenticated requests
         const token = await getAccessToken();
         if (token) {
           return {

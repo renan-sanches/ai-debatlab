@@ -33,6 +33,20 @@ export async function getDebateResultsByUserId(userId: number) {
         .orderBy(desc(debateResults.createdAt));
 }
 
+export async function getHeadToHeadDebateResults(userId: number, modelA: string, modelB: string) {
+    const db = await getDb();
+    if (!db) return [];
+
+    return db.select()
+        .from(debateResults)
+        .where(and(
+            eq(debateResults.userId, userId),
+            sql`${debateResults.pointsAwarded}->>${modelA} IS NOT NULL`,
+            sql`${debateResults.pointsAwarded}->>${modelB} IS NOT NULL`
+        ))
+        .orderBy(desc(debateResults.createdAt));
+}
+
 // Model Stats functions
 export async function upsertModelStats(userId: number, modelId: string, pointsToAdd: {
     total: number;

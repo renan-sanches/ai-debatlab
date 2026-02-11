@@ -18,7 +18,7 @@ export async function asyncPool<T, R>(
     const p = Promise.resolve().then(() => iteratorFn(item));
     ret.push(p);
 
-    if (poolLimit <= array.length) {
+    if (poolLimit < array.length) {
       const e: Promise<void> = p.then(() => {
         executing.splice(executing.indexOf(e), 1);
       }).catch(() => {

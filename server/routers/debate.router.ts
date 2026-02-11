@@ -58,12 +58,13 @@ export const debateRouter = router({
   // Create a new debate
   create: protectedProcedure
     .input(z.object({
-      question: z.string().min(1),
-      participantModels: z.array(z.string()).min(2),
+      question: z.string().min(1).max(10000),
+      participantModels: z.array(z.string()).min(2).max(20),
       moderatorModel: z.string(),
       devilsAdvocateEnabled: z.boolean().default(false),
       devilsAdvocateModel: z.string().nullable().default(null),
       votingEnabled: z.boolean().default(false),
+      isBlindMode: z.boolean().default(false),
       title: z.string().optional(),
       tags: z.array(z.string()).optional(),
       imageUrl: z.string().optional(),
@@ -84,6 +85,7 @@ export const debateRouter = router({
         devilsAdvocateEnabled: input.devilsAdvocateEnabled,
         devilsAdvocateModel: input.devilsAdvocateModel,
         votingEnabled: input.votingEnabled,
+        isBlindMode: input.isBlindMode,
         title,
         tags: input.tags || [],
         imageUrl: input.imageUrl,
@@ -286,12 +288,14 @@ export const debateRouter = router({
       const rounds = await db.getRoundsByDebateId(input.debateId);
       const currentRound = rounds.find(r => r.id === input.roundId);
       const question = currentRound?.followUpQuestion || debate.question;
-
       // Build a map of all participant models for matching
       const participantModelsMap = debate.participantModels.map(id => {
         const m = getModelById(id);
         return { id, name: m?.name || id, model: m };
       });
+
+      // Pre-fetch user keys if needed, to avoid race conditions or repeated DB calls in the loop
+      const userKeys = input.useUserApiKey ? await db.getUserApiKeys(ctx.user.id) : [];
 
       const processVote = async (modelId: string) => {
         const model = getModelById(modelId);
@@ -311,12 +315,12 @@ export const debateRouter = router({
         let apiProvider: "openrouter" | "anthropic" | "openai" | "google" | null = null;
 
         if (input.useUserApiKey) {
-          const openRouterKey = userApiKeys.find(k => k.provider === "openrouter");
+          const openRouterKey = userKeys.find((k: { provider: string }) => k.provider === "openrouter");
           if (openRouterKey) {
             userApiKey = openRouterKey.apiKey;
             apiProvider = "openrouter";
           } else {
-            const providerKey = userApiKeys.find(k => k.provider === model.provider);
+            const providerKey = userKeys.find((k: { provider: string }) => k.provider === model.provider);
             if (providerKey) {
               userApiKey = providerKey.apiKey;
               apiProvider = model.provider as "anthropic" | "openai" | "google";
@@ -423,14 +427,9 @@ export const debateRouter = router({
           }
 
           if (votedForParticipant && votedForParticipant.id !== modelId) {
-            await db.createVote({
-              roundId: input.roundId,
-              voterModelId: modelId,
-              votedForModelId: votedForParticipant.id,
-              reason: reason || voteContent.slice(0, 200),
-            });
-
+            // Return vote object for batch insertion
             return {
+              roundId: input.roundId,
               voterModelId: modelId,
               votedForModelId: votedForParticipant.id,
               reason: reason || voteContent.slice(0, 200),
@@ -442,11 +441,15 @@ export const debateRouter = router({
 
       const poolResults = await asyncPool(5, debate.participantModels, processVote);
 
-      const votes = poolResults
-        .filter((r): r is PromiseFulfilledResult<any> => r.status === "fulfilled" && r.value !== null)
+      const votesToInsert = poolResults
+        .filter((r): r is PromiseFulfilledResult<any> => r.status === "fulfilled" && r.value != null)
         .map(r => r.value);
 
-      return { votes };
+      if (votesToInsert.length > 0) {
+        await db.createVotes(votesToInsert);
+      }
+
+      return { votes: votesToInsert };
     }),
 
   // Generate moderator synthesis
@@ -549,7 +552,7 @@ export const debateRouter = router({
           apiProvider,
         }),
         invokeLLMWithModel({
-          model: "openai-gpt-4o-mini", // Use a fast, smart model for analytics JSON
+          model: "openai/gpt-4o-mini", // Use a fast, smart model for analytics JSON
           messages: [{ role: "user", content: analyticsPrompt }],
           // Use same API key strategy if applicable, or fallback to system
           // For simplicity, we'll try to use the user's key if it works for OpenAI, otherwise system

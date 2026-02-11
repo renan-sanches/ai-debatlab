@@ -23,6 +23,23 @@ export const resultsRouter = router({
         throw new Error("Debate not found");
       }
 
+      // Prevent double-ending: if debate already completed, return existing result
+      if (debate.status === "completed") {
+        const existingResult = await db.getDebateResult(input.debateId);
+        if (existingResult) {
+          return {
+            finalAssessment: existingResult.finalAssessment,
+            synthesis: existingResult.synthesis,
+            moderatorTopPick: existingResult.moderatorTopPick,
+            peerVotes: existingResult.peerVotes || {},
+            strongestArguments: existingResult.strongestArguments || [],
+            devilsAdvocateSuccess: existingResult.devilsAdvocateSuccess,
+            pointsAwarded: existingResult.pointsAwarded || {},
+            usage: undefined,
+          };
+        }
+      }
+
       // Get all rounds and their data
       const rounds = await db.getRoundsWithData(input.debateId);
       const allRoundsData = rounds.map(round => ({

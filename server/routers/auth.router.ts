@@ -7,8 +7,22 @@
  */
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import * as db from "../db";
+import { firebaseAuth } from "../_core/firebase";
+import { ENV } from "../_core/env";
 
 export const authRouter = router({
+  // Diagnosis endpoint to check server configuration
+  status: publicProcedure.query(async () => {
+    return {
+      firebaseInitialized: !!firebaseAuth,
+      env: {
+        projectId: !!ENV.firebaseProjectId,
+        clientEmail: !!ENV.firebaseClientEmail,
+        privateKey: !!ENV.firebasePrivateKey,
+      }
+    };
+  }),
+
   // Get current user from context (populated by Firebase auth in context.ts)
   me: publicProcedure.query(opts => opts.ctx.user),
 

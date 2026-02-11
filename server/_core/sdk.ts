@@ -1,12 +1,12 @@
 /**
  * SDK Server (Deprecated)
- * 
+ *
  * This file previously handled Manus OAuth authentication.
- * With the migration to Supabase Auth, use the following instead:
- * 
- * - For authentication: import { authenticateRequest } from "../supabase"
- * - For user lookup: import { getUserBySupabaseId } from "../db"
- * 
+ * With the migration to Firebase Auth, use the following instead:
+ *
+ * - For authentication: import { authenticateRequest } from "../auth"
+ * - For user lookup: import { getUserByFirebaseUid } from "../services/userService"
+ *
  * This file is kept for reference only and should be removed once all
  * legacy code has been migrated.
  */
@@ -23,11 +23,11 @@ export type SessionPayload = {
 };
 
 /**
- * @deprecated Use authenticateRequest from "../supabase" instead
+ * @deprecated Use authenticateRequest from "../auth" instead
  */
 class SDKServer {
   /**
-   * @deprecated Use authenticateRequest from "../supabase" instead
+   * @deprecated Use authenticateRequest from "../auth" instead
    */
   async authenticateRequest(req: Request): Promise<User> {
     const user = await authenticateRequest(req);

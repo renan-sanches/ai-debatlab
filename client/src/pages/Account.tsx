@@ -92,9 +92,6 @@ export default function Account() {
                           {accountData.user.name || "Anonymous User"}
                         </div>
                       </div>
-                      <button className="text-primary hover:text-primary-hover text-sm font-medium mt-2">
-                        Edit
-                      </button>
                     </div>
 
                     {/* Email */}
@@ -110,9 +107,6 @@ export default function Account() {
                           {accountData.user.email}
                         </div>
                       </div>
-                      <button className="text-primary hover:text-primary-hover text-sm font-medium mt-2">
-                        Update
-                      </button>
                     </div>
 
                     {/* Member Info */}
@@ -149,24 +143,18 @@ export default function Account() {
                   </div>
                 </div>
 
-                {/* Subscription Card */}
+                {/* Account Type Card */}
                 <div className="bg-white dark:bg-card rounded-2xl p-6 border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col items-center justify-center text-center relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-b from-blue-500/5 to-transparent pointer-events-none" />
                   <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/30 mb-4">
                     <Zap className="h-8 w-8 text-white" />
                   </div>
                   <h3 className="text-xs font-bold text-primary uppercase tracking-widest mb-2">
-                    Current Subscription
+                    Account Type
                   </h3>
-                  <div className="text-3xl font-bold text-slate-900 dark:text-white mb-6">
-                    Pro Plan
+                  <div className="text-3xl font-bold text-slate-900 dark:text-white mb-6 capitalize">
+                    {accountData.user.loginMethod || "User"}
                   </div>
-                  <Button
-                    variant="outline"
-                    className="w-full rounded-xl border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium"
-                  >
-                    Manage Billing
-                  </Button>
                 </div>
               </div>
 
@@ -281,23 +269,6 @@ export default function Account() {
                 </div>
               </div>
 
-              {/* Danger Zone */}
-              <div className="pt-8 border-t border-slate-200 dark:border-slate-800 opacity-60 hover:opacity-100 transition-opacity">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-medium text-red-500">
-                      Danger Zone
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Permanently delete your account and all associated data.
-                    </p>
-                  </div>
-                  <button className="px-4 py-2 text-xs font-medium text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/30 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2">
-                    <Trash2 className="h-3.5 w-3.5" />
-                    Delete Account
-                  </button>
-                </div>
-              </div>
             </div>
           ) : (
             <div className="text-center py-20">
