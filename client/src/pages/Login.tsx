@@ -13,7 +13,6 @@ import {
   updateProfile,
   signInWithRedirect,
   getRedirectResult,
-  onAuthStateChanged,
   GoogleAuthProvider,
   GithubAuthProvider
 } from "firebase/auth";
@@ -25,7 +24,7 @@ export default function Login() {
   const [message, setMessage] = useState<string | null>(null);
 
   // Check server status
-  const { data: serverStatus, isLoading: isCheckingServer } = trpc.auth.status.useQuery(undefined, {
+  const { data: serverStatus } = trpc.auth.status.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false
   });
@@ -40,17 +39,8 @@ export default function Login() {
   const [signUpPassword, setSignUpPassword] = useState("");
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState("");
 
-  // Listen for auth state changes (fallback for redirect flow)
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setLocation("/");
-      }
-    });
-    return () => unsubscribe();
-  }, [setLocation]);
-
   // Handle OAuth redirect result
+  // This is crucial for Google/Github sign-ins to complete successfully
   useEffect(() => {
     const handleRedirect = async () => {
       try {
