@@ -67,14 +67,24 @@ export async function authenticateRequest(req: Request) {
   // Extract token from request
   const token = extractToken(req);
   if (!token) {
+    // Temporary debug log: remove after auth migration stabilises.
+    console.warn("[Auth] No token in request:", req.path);
     return null;
   }
+
+  // Temporary debug log: remove after auth migration stabilises.
+  console.debug("[Auth] Token received, length:", token.length, "path:", req.path);
 
   // Verify with Firebase
   const decodedToken = await verifyFirebaseToken(token);
   if (!decodedToken) {
+    // Temporary debug log: remove after auth migration stabilises.
+    console.warn("[Auth] Token verification failed for path:", req.path);
     return null;
   }
+
+  // Temporary debug log: remove after auth migration stabilises.
+  console.debug("[Auth] Token verified for uid:", decodedToken.uid, "email:", decodedToken.email);
 
   // Get or create user in our database using upsert (ON CONFLICT) to prevent race conditions
   await db.upsertUser({
@@ -85,5 +95,8 @@ export async function authenticateRequest(req: Request) {
     lastSignedIn: new Date(),
   });
 
-  return await db.getUserByFirebaseUid(decodedToken.uid);
+  const user = await db.getUserByFirebaseUid(decodedToken.uid);
+  // Temporary debug log: remove after auth migration stabilises.
+  console.debug("[Auth] DB user lookup result:", user ? `id=${user.id}` : "null");
+  return user;
 }

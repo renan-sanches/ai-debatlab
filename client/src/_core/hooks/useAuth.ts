@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { auth } from "@/lib/firebase";
 import { onAuthStateChanged, signOut, User as FirebaseUser } from "firebase/auth";
@@ -19,7 +19,8 @@ export function useAuth(options?: UseAuthOptions) {
 
   // Get user from our backend
   const meQuery = trpc.auth.me.useQuery(undefined, {
-    retry: false,
+    retry: 2,                    // Retry on network/server errors
+    retryDelay: 1000,
     refetchOnWindowFocus: false,
     enabled: !!firebaseUser, // Only fetch when we have a Firebase user
   });
@@ -27,6 +28,8 @@ export function useAuth(options?: UseAuthOptions) {
   // Listen for auth changes
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        // Temporary debug log: remove after auth migration stabilises.
+        console.debug("[useAuth] onAuthStateChanged →", user ? user.uid : "null");
         setFirebaseUser(user);
         setIsLoading(false);
 
@@ -72,6 +75,28 @@ export function useAuth(options?: UseAuthOptions) {
     firebaseUser,
     isLoading,
   ]);
+
+  // Safety-net: if Firebase user exists but server returned null, refetch once.
+  // This handles transient failures during the auth handshake.
+  const retryRef = useRef(0);
+  useEffect(() => {
+    if (
+      firebaseUser &&
+      !meQuery.data &&
+      !meQuery.isLoading &&
+      meQuery.status === "success" &&
+      retryRef.current < 2
+    ) {
+      retryRef.current += 1;
+      // Temporary debug log: remove after auth migration stabilises.
+      console.warn("[useAuth] Server returned null for Firebase user – refetching (attempt", retryRef.current, ")");
+      const timer = setTimeout(() => meQuery.refetch(), 800);
+      return () => clearTimeout(timer);
+    }
+    if (meQuery.data) {
+      retryRef.current = 0; // reset on success
+    }
+  }, [firebaseUser, meQuery.data, meQuery.isLoading, meQuery.status, meQuery.refetch]);
 
   // Handle redirect for unauthenticated users
   useEffect(() => {

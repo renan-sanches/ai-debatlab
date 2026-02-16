@@ -46,13 +46,21 @@ export default function DashboardLayout({
     return saved ? parseInt(saved, 10) : DEFAULT_WIDTH;
   });
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const { loading, user } = useAuth();
+  const { loading, user, firebaseUser, refresh } = useAuth();
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_WIDTH_KEY, sidebarWidth.toString());
   }, [sidebarWidth]);
 
   if (loading) {
+    return <DashboardLayoutSkeleton />;
+  }
+
+  // Firebase user exists but server hasn't confirmed yet – keep loading
+  // instead of showing "Sign in" (avoids false redirect-loop after login).
+  if (!user && firebaseUser) {
+    // Temporary debug log: remove after auth migration stabilises.
+    console.warn("[DashboardLayout] Firebase user present but server user null – retrying…");
     return <DashboardLayoutSkeleton />;
   }
 

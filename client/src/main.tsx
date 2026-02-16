@@ -1,5 +1,6 @@
 import { trpc } from "@/lib/trpc";
 import { getAccessToken } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
@@ -15,8 +16,19 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (typeof window === "undefined") return;
 
   const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
+  const hasFirebaseUser = Boolean(auth.currentUser);
+  const isAlreadyOnLoginPage = window.location.pathname === "/login";
 
   if (!isUnauthorized) return;
+  if (isAlreadyOnLoginPage || hasFirebaseUser) {
+    // Temporary debug log: remove after auth migration stabilizes.
+    console.warn("[Auth] Ignoring unauthorized redirect", {
+      path: window.location.pathname,
+      hasFirebaseUser,
+      message: error.message,
+    });
+    return;
+  }
 
   // Redirect to our login page instead of external OAuth
   window.location.href = "/login";

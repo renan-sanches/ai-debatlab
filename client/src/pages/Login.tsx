@@ -11,8 +11,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   updateProfile,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   GoogleAuthProvider,
   GithubAuthProvider
 } from "firebase/auth";
@@ -39,23 +38,7 @@ export default function Login() {
   const [signUpPassword, setSignUpPassword] = useState("");
   const [signUpConfirmPassword, setSignUpConfirmPassword] = useState("");
 
-  // Handle OAuth redirect result
-  // This is crucial for Google/Github sign-ins to complete successfully
-  useEffect(() => {
-    const handleRedirect = async () => {
-      try {
-        const result = await getRedirectResult(auth);
-        if (result) {
-          // User successfully signed in via redirect
-          setLocation("/");
-        }
-      } catch (err: any) {
-        setError(err.message || "An error occurred during sign in");
-      }
-    };
-
-    handleRedirect();
-  }, [setLocation]);
+  // No redirect handler needed -- OAuth now uses popup flow (see handleOAuthSignIn).
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,9 +46,14 @@ export default function Login() {
     setError(null);
 
     try {
-      await signInWithEmailAndPassword(auth, signInEmail, signInPassword);
+      const cred = await signInWithEmailAndPassword(auth, signInEmail, signInPassword);
+      // Temporary debug log: remove after auth migration stabilises.
+      console.log("[Login] signIn SUCCESS uid:", cred.user.uid, "email:", cred.user.email);
+      console.log("[Login] auth.currentUser:", auth.currentUser?.uid);
       setLocation("/");
     } catch (err: any) {
+      // Temporary debug log: remove after auth migration stabilises.
+      console.error("[Login] signIn FAILED:", err.code, err.message);
       setError(err.message || "An unexpected error occurred");
     } finally {
       setIsLoading(false);
@@ -108,16 +96,17 @@ export default function Login() {
     setError(null);
 
     try {
-      let provider;
-      if (providerName === "google") {
-        provider = new GoogleAuthProvider();
-      } else {
-        provider = new GithubAuthProvider();
-      }
-      // Use redirect instead of popup to avoid COOP issues
-      await signInWithRedirect(auth, provider);
-      // User will be redirected, no need to call setLocation here
+      const provider = providerName === "google"
+        ? new GoogleAuthProvider()
+        : new GithubAuthProvider();
+
+      const result = await signInWithPopup(auth, provider);
+      // Temporary debug log: remove after auth migration stabilises.
+      console.log("[Login] OAuth SUCCESS uid:", result.user.uid, "email:", result.user.email);
+      setLocation("/");
     } catch (err: any) {
+      // Temporary debug log: remove after auth migration stabilises.
+      console.error("[Login] OAuth FAILED:", err.code, err.message);
       setError(err.message || "An unexpected error occurred");
       setIsLoading(false);
     }

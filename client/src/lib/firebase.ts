@@ -21,12 +21,16 @@ export function getAccessToken(): Promise<string | null> {
       if (user) {
         try {
           const token = await user.getIdToken();
+          // Temporary debug log: remove after auth migration stabilises.
+          console.debug("[getAccessToken] token obtained, length:", token.length);
           resolve(token);
         } catch (e) {
-          console.error("Failed to get ID token", e);
+          console.error("[getAccessToken] Failed to get ID token", e);
           resolve(null);
         }
       } else {
+        // Temporary debug log: remove after auth migration stabilises.
+        console.debug("[getAccessToken] No Firebase user – returning null token");
         resolve(null);
       }
     });
