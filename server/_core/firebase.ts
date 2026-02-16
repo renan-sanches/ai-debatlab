@@ -28,12 +28,16 @@ if (getApps().length === 0) {
     console.log("[Firebase] clientEmail:", ENV.firebaseClientEmail ? "SET" : "EMPTY");
     console.log("[Firebase] privateKey length:", ENV.firebasePrivateKey.length, "starts with:", ENV.firebasePrivateKey.substring(0, 10));
     if (ENV.firebaseProjectId && ENV.firebaseClientEmail && ENV.firebasePrivateKey) {
+      const storageBucket =
+        ENV.firebaseStorageBucket ||
+        `${ENV.firebaseProjectId}.firebasestorage.app`;
       initializeApp({
         credential: cert({
           projectId: ENV.firebaseProjectId,
           clientEmail: ENV.firebaseClientEmail,
           privateKey: formatPrivateKey(ENV.firebasePrivateKey),
         }),
+        storageBucket,
       });
       console.log("[Firebase] Admin SDK initialized");
     } else {
